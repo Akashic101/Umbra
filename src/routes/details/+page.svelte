@@ -74,11 +74,22 @@ async function load(search: string): Promise<void> {
 	class="mx-auto flex h-full w-full flex-col gap-4 overflow-y-auto px-4 pb-10 pt-4 sm:px-6"
 >
 	<div class="flex w-full items-center justify-between gap-3">
-		<div>
+		<div class="min-w-0">
 			<p class="text-xs text-gray-500 dark:text-gray-400">Eclipse details</p>
 			<h1 class="text-xl font-semibold">
 				{query?.date ?? "Missing selection"}
 			</h1>
+			{#if query}
+				{@const locationText =
+					query.location.label ||
+					formatCoordinates(query.location.lat, query.location.lon)}
+				<p
+					class="truncate text-sm text-gray-500 dark:text-gray-400"
+					title={locationText}
+				>
+					{locationText}
+				</p>
+			{/if}
 		</div>
 		<Button color="alternative" size="sm" href="/">Back to map</Button>
 	</div>
