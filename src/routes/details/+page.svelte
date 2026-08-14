@@ -2,6 +2,7 @@
 import { Alert, Button, Card, Spinner } from "flowbite-svelte";
 import { page } from "$app/state";
 import AltitudeChart from "$lib/components/AltitudeChart.svelte";
+import StagesCard from "$lib/components/StagesCard.svelte";
 import { deviceTimeZone, parseDetailsQuery } from "$lib/details-query";
 import {
 	formatPathStatus,
@@ -172,6 +173,11 @@ async function load(search: string): Promise<void> {
 						</p>
 					</Card>
 
+					<StagesCard
+						contacts={details.contacts}
+						localType={details.localType}
+					/>
+
 					<Card
 						class="w-full max-w-none col-span-2 lg:col-span-4"
 						size="xl"
@@ -185,7 +191,6 @@ async function load(search: string): Promise<void> {
 							contacts={details.contacts}
 							localType={details.localType}
 						/>
-					
 					</Card>
 				</div>
 			{:else if !loading && error}

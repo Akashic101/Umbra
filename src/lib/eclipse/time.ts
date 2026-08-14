@@ -87,6 +87,30 @@ export function formatDuration(seconds: number): string {
 	return `${secs}s`;
 }
 
+/** Live countdown: years, days, and HH:MM:SS (no fractional seconds). */
+export function formatCountdown(ms: number): string {
+	if (!Number.isFinite(ms) || ms < 0) {
+		return "—";
+	}
+	const total = Math.floor(ms / 1000);
+	const years = Math.floor(total / (365 * 24 * 3600));
+	const afterYears = total % (365 * 24 * 3600);
+	const days = Math.floor(afterYears / (24 * 3600));
+	const afterDays = afterYears % (24 * 3600);
+	const hours = Math.floor(afterDays / 3600);
+	const minutes = Math.floor((afterDays % 3600) / 60);
+	const secs = afterDays % 60;
+	const pad = (n: number) => String(n).padStart(2, "0");
+	const clock = `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+	if (years > 0) {
+		return `${years}y ${days}d ${clock}`;
+	}
+	if (days > 0) {
+		return `${days}d ${clock}`;
+	}
+	return clock;
+}
+
 export function formatPercent(value: number): string {
 	if (!Number.isFinite(value) || value <= 0) {
 		return "0%";

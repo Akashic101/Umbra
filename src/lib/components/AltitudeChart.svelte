@@ -29,6 +29,9 @@ type ContactMarker = {
 	y: number;
 };
 
+type ChartPoint = { x: number; y: number; alt: number };
+type AltitudeSegment = { above: boolean; points: string };
+
 const chart = $derived.by(() => {
 	if (samples.length < 2) {
 		return null;
@@ -50,15 +53,19 @@ const chart = $derived.by(() => {
 		const x = padL + (plotW * index) / (samples.length - 1);
 		const y =
 			padT + plotH * (1 - (sample.altitudeDeg - minAlt) / (maxAlt - minAlt));
-		return { x, y, iso: sample.iso, alt: sample.altitudeDeg, ms: Date.parse(sample.iso) };
+		return {
+			x,
+			y,
+			iso: sample.iso,
+			alt: sample.altitudeDeg,
+			ms: Date.parse(sample.iso),
+		};
 	});
 	const zeroY =
 		minAlt <= 0 && maxAlt >= 0
 			? padT + plotH * (1 - (0 - minAlt) / (maxAlt - minAlt))
 			: null;
-	const polyline = points
-		.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-		.join(" ");
+	const segments = splitAltitudeSegments(points, zeroY);
 	const startLabel = formatHm(samples[0]?.iso ?? null);
 	const endLabel = formatHm(samples.at(-1)?.iso ?? null);
 
@@ -107,7 +114,7 @@ const chart = $derived.by(() => {
 
 	return {
 		points,
-		polyline,
+		segments,
 		zeroY,
 		minAlt,
 		maxAlt,
@@ -119,6 +126,61 @@ const chart = $derived.by(() => {
 		plotTop: padT,
 	};
 });
+
+function splitAltitudeSegments(
+	points: ChartPoint[],
+	zeroY: number | null,
+): AltitudeSegment[] {
+	if (points.length < 2) {
+		return [];
+	}
+
+	const segments: AltitudeSegment[] = [];
+	let currentAbove = points[0].alt >= 0;
+	let current: ChartPoint[] = [points[0]];
+
+	const flush = () => {
+		if (current.length < 2) {
+			return;
+		}
+		segments.push({
+			above: currentAbove,
+			points: current
+				.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+				.join(" "),
+		});
+	};
+
+	for (let i = 1; i < points.length; i++) {
+		const prev = points[i - 1];
+		const next = points[i];
+		const nextAbove = next.alt >= 0;
+
+		// Same side of horizon (≥0 vs <0), including samples at exactly 0°
+		if ((prev.alt >= 0) === (next.alt >= 0)) {
+			current.push(next);
+			continue;
+		}
+
+		// Crossing 0°: interpolate a point on the horizon
+		const denom = next.alt - prev.alt;
+		const t = denom === 0 ? 0 : -prev.alt / denom;
+		const crossing: ChartPoint = {
+			x: prev.x + t * (next.x - prev.x),
+			y: zeroY !== null ? zeroY : prev.y + t * (next.y - prev.y),
+			alt: 0,
+		};
+
+		current.push(crossing);
+		flush();
+
+		currentAbove = nextAbove;
+		current = [crossing, next];
+	}
+
+	flush();
+	return segments;
+}
 
 function pointAtIso(
 	iso: string,
@@ -228,14 +290,18 @@ function formatHm(iso: string | null): string {
 				opacity="0.85"
 			/>
 		{/each}
-		<polyline
-			fill="none"
-			class="stroke-primary-600 dark:stroke-primary-400"
-			stroke-width="2"
-			stroke-linejoin="round"
-			stroke-linecap="round"
-			points={chart.polyline}
-		/>
+		{#each chart.segments as segment, i (`${segment.above}-${i}`)}
+			<polyline
+				fill="none"
+				class={segment.above
+					? "stroke-primary-600 dark:stroke-primary-400"
+					: "stroke-slate-500 dark:stroke-slate-400"}
+				stroke-width="2"
+				stroke-linejoin="round"
+				stroke-linecap="round"
+				points={segment.points}
+			/>
+		{/each}
 		{#each chart.markers as marker (marker.key)}
 			<circle
 				cx={marker.x}
