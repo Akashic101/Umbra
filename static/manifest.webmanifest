@@ -1,0 +1,17 @@
+{
+	"name": "Umbra — Solar Eclipse Circumstances",
+	"short_name": "Umbra",
+	"description": "Local start, end, and coverage for any solar eclipse, anywhere on Earth.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#111827",
+	"theme_color": "#111827",
+	"icons": [
+		{
+			"src": "icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}
