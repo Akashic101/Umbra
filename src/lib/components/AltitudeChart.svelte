@@ -333,20 +333,24 @@ function formatHm(iso: string | null): string {
 		>
 			{chart.endLabel}
 		</text>
-		<text
-			x={4}
-			y={padT + 4}
-			class="fill-gray-500 text-[9px] dark:fill-gray-400"
-		>
-			{Math.round(chart.maxAlt)}°
-		</text>
-		<text
-			x={4}
-			y={height - padB}
-			class="fill-gray-500 text-[9px] dark:fill-gray-400"
-		>
-			{Math.round(chart.minAlt)}°
-		</text>
+		{#if chart.zeroY === null || Math.round(chart.maxAlt) !== 0}
+			<text
+				x={4}
+				y={padT + 4}
+				class="fill-gray-500 text-[9px] dark:fill-gray-400"
+			>
+				{Math.round(chart.maxAlt)}°
+			</text>
+		{/if}
+		{#if chart.zeroY === null || Math.round(chart.minAlt) !== 0}
+			<text
+				x={4}
+				y={height - padB}
+				class="fill-gray-500 text-[9px] dark:fill-gray-400"
+			>
+				{Math.round(chart.minAlt)}°
+			</text>
+		{/if}
 	</svg>
 	{#if chart.hasCentral}
 		<p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
