@@ -1,14 +1,14 @@
 <script lang="ts">
 import type { ContactTimes, LocalEclipseType } from "$lib/types";
 
-type AltitudePoint = { iso: string; altitudeDeg: number };
+type AzimuthPoint = { iso: string; azimuthDeg: number };
 
 let {
 	samples = [],
 	contacts,
 	localType = "partial",
 }: {
-	samples?: AltitudePoint[];
+	samples?: AzimuthPoint[];
 	contacts: ContactTimes;
 	localType?: LocalEclipseType;
 } = $props();
@@ -19,6 +19,8 @@ const padL = 36;
 const padR = 12;
 const padT = 18;
 const padB = 28;
+const minAz = 0;
+const maxAz = 360;
 
 type ContactMarker = {
 	key: "c1" | "c2" | "c3" | "c4";
@@ -27,19 +29,9 @@ type ContactMarker = {
 	y: number;
 };
 
-type ChartPoint = { x: number; y: number; alt: number };
-type AltitudeSegment = { above: boolean; points: string };
-
 const chart = $derived.by(() => {
 	if (samples.length < 2) {
 		return null;
-	}
-	const alts = samples.map((s) => s.altitudeDeg);
-	let minAlt = Math.min(...alts, 0);
-	let maxAlt = Math.max(...alts, 0);
-	if (maxAlt - minAlt < 5) {
-		maxAlt += 2.5;
-		minAlt -= 2.5;
 	}
 	const plotW = width - padL - padR;
 	const plotH = height - padT - padB;
@@ -48,22 +40,14 @@ const chart = $derived.by(() => {
 	const spanMs = Math.max(endMs - startMs, 1);
 
 	const points = samples.map((sample, index) => {
+		const az = normalizeAzimuth(sample.azimuthDeg);
 		const x = padL + (plotW * index) / (samples.length - 1);
-		const y =
-			padT + plotH * (1 - (sample.altitudeDeg - minAlt) / (maxAlt - minAlt));
-		return {
-			x,
-			y,
-			iso: sample.iso,
-			alt: sample.altitudeDeg,
-			ms: Date.parse(sample.iso),
-		};
+		const y = padT + plotH * (1 - (az - minAz) / (maxAz - minAz));
+		return { x, y, iso: sample.iso, az, ms: Date.parse(sample.iso) };
 	});
-	const zeroY =
-		minAlt <= 0 && maxAlt >= 0
-			? padT + plotH * (1 - (0 - minAlt) / (maxAlt - minAlt))
-			: null;
-	const segments = splitAltitudeSegments(points, zeroY);
+	const polyline = points
+		.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+		.join(" ");
 	const startLabel = formatHm(samples[0]?.iso ?? null);
 	const endLabel = formatHm(samples.at(-1)?.iso ?? null);
 
@@ -79,17 +63,7 @@ const chart = $derived.by(() => {
 		if (!def.iso) {
 			continue;
 		}
-		const pos = pointAtIso(
-			def.iso,
-			samples,
-			points,
-			startMs,
-			spanMs,
-			plotW,
-			plotH,
-			minAlt,
-			maxAlt,
-		);
+		const pos = pointAtIso(def.iso, samples, points, startMs, spanMs, plotW);
 		if (!pos) {
 			continue;
 		}
@@ -111,11 +85,7 @@ const chart = $derived.by(() => {
 				: "totality/annularity";
 
 	return {
-		points,
-		segments,
-		zeroY,
-		minAlt,
-		maxAlt,
+		polyline,
 		startLabel,
 		endLabel,
 		markers,
@@ -125,83 +95,33 @@ const chart = $derived.by(() => {
 	};
 });
 
-function splitAltitudeSegments(
-	points: ChartPoint[],
-	zeroY: number | null,
-): AltitudeSegment[] {
-	if (points.length < 2) {
-		return [];
+function normalizeAzimuth(az: number): number {
+	if (!Number.isFinite(az)) {
+		return 0;
 	}
-
-	const segments: AltitudeSegment[] = [];
-	let currentAbove = points[0].alt >= 0;
-	let current: ChartPoint[] = [points[0]];
-
-	const flush = () => {
-		if (current.length < 2) {
-			return;
-		}
-		segments.push({
-			above: currentAbove,
-			points: current
-				.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-				.join(" "),
-		});
-	};
-
-	for (let i = 1; i < points.length; i++) {
-		const prev = points[i - 1];
-		const next = points[i];
-		const nextAbove = next.alt >= 0;
-
-		// Same side of horizon (≥0 vs <0), including samples at exactly 0°
-		if (prev.alt >= 0 === next.alt >= 0) {
-			current.push(next);
-			continue;
-		}
-
-		// Crossing 0°: interpolate a point on the horizon
-		const denom = next.alt - prev.alt;
-		const t = denom === 0 ? 0 : -prev.alt / denom;
-		const crossing: ChartPoint = {
-			x: prev.x + t * (next.x - prev.x),
-			y: zeroY !== null ? zeroY : prev.y + t * (next.y - prev.y),
-			alt: 0,
-		};
-
-		current.push(crossing);
-		flush();
-
-		currentAbove = nextAbove;
-		current = [crossing, next];
-	}
-
-	flush();
-	return segments;
+	const n = az % 360;
+	return n < 0 ? n + 360 : n;
 }
 
 function pointAtIso(
 	iso: string,
-	series: AltitudePoint[],
-	points: { x: number; y: number; ms: number; alt: number }[],
+	series: AzimuthPoint[],
+	points: { x: number; y: number; ms: number; az: number }[],
 	startMs: number,
 	spanMs: number,
 	plotW: number,
-	plotH: number,
-	minAlt: number,
-	maxAlt: number,
 ): { x: number; y: number } | null {
 	const ms = Date.parse(iso);
 	if (!Number.isFinite(ms)) {
 		return null;
 	}
 	const x = padL + (plotW * (ms - startMs)) / spanMs;
-	const alt = altitudeAtMs(ms, series);
-	if (alt === null) {
+	const az = azimuthAtMs(ms, series);
+	if (az === null) {
 		return null;
 	}
-	const y = padT + plotH * (1 - (alt - minAlt) / (maxAlt - minAlt));
-	// Prefer curve x when ms lands on a sample (avoids tiny float drift)
+	const y =
+		padT + (height - padT - padB) * (1 - (az - minAz) / (maxAz - minAz));
 	const exact = points.find((p) => p.ms === ms);
 	if (exact) {
 		return { x: exact.x, y: exact.y };
@@ -209,30 +129,29 @@ function pointAtIso(
 	return { x, y };
 }
 
-function altitudeAtMs(ms: number, series: AltitudePoint[]): number | null {
+function azimuthAtMs(ms: number, series: AzimuthPoint[]): number | null {
 	if (series.length === 0) {
 		return null;
 	}
 	const firstMs = Date.parse(series[0].iso);
 	const lastMs = Date.parse(series.at(-1)!.iso);
 	if (ms <= firstMs) {
-		return series[0].altitudeDeg;
+		return normalizeAzimuth(series[0].azimuthDeg);
 	}
 	if (ms >= lastMs) {
-		return series.at(-1)!.altitudeDeg;
+		return normalizeAzimuth(series.at(-1)!.azimuthDeg);
 	}
 	for (let i = 0; i < series.length - 1; i++) {
 		const aMs = Date.parse(series[i].iso);
 		const bMs = Date.parse(series[i + 1].iso);
 		if (ms >= aMs && ms <= bMs) {
 			if (bMs === aMs) {
-				return series[i].altitudeDeg;
+				return normalizeAzimuth(series[i].azimuthDeg);
 			}
 			const t = (ms - aMs) / (bMs - aMs);
-			return (
-				series[i].altitudeDeg +
-				t * (series[i + 1].altitudeDeg - series[i].altitudeDeg)
-			);
+			const a = normalizeAzimuth(series[i].azimuthDeg);
+			const b = normalizeAzimuth(series[i + 1].azimuthDeg);
+			return normalizeAzimuth(a + t * (b - a));
 		}
 	}
 	return null;
@@ -255,27 +174,9 @@ function formatHm(iso: string | null): string {
 		viewBox="0 0 {width} {height}"
 		class="h-auto w-full"
 		role="img"
-		aria-label="Sun altitude from first to fourth contact"
+		aria-label="Sun azimuth from first to fourth contact"
 	>
-		<title>Sun altitude during the eclipse</title>
-		{#if chart.zeroY !== null}
-			<line
-				x1={padL}
-				x2={width - padR}
-				y1={chart.zeroY}
-				y2={chart.zeroY}
-				class="stroke-gray-300 dark:stroke-gray-600"
-				stroke-dasharray="4 3"
-				stroke-width="1"
-			/>
-			<text
-				x={4}
-				y={chart.zeroY + 3}
-				class="fill-gray-500 text-[9px] dark:fill-gray-400"
-			>
-				0°
-			</text>
-		{/if}
+		<title>Sun azimuth during the eclipse</title>
 		{#each chart.markers as marker (marker.key)}
 			<line
 				x1={marker.x}
@@ -288,18 +189,14 @@ function formatHm(iso: string | null): string {
 				opacity="0.85"
 			/>
 		{/each}
-		{#each chart.segments as segment, i (`${segment.above}-${i}`)}
-			<polyline
-				fill="none"
-				class={segment.above
-					? "stroke-primary-600 dark:stroke-primary-400"
-					: "stroke-slate-500 dark:stroke-slate-400"}
-				stroke-width="2"
-				stroke-linejoin="round"
-				stroke-linecap="round"
-				points={segment.points}
-			/>
-		{/each}
+		<polyline
+			fill="none"
+			class="stroke-primary-600 dark:stroke-primary-400"
+			stroke-width="2"
+			stroke-linejoin="round"
+			stroke-linecap="round"
+			points={chart.polyline}
+		/>
 		{#each chart.markers as marker (marker.key)}
 			<circle
 				cx={marker.x}
@@ -331,24 +228,20 @@ function formatHm(iso: string | null): string {
 		>
 			{chart.endLabel}
 		</text>
-		{#if chart.zeroY === null || Math.round(chart.maxAlt) !== 0}
-			<text
-				x={4}
-				y={padT + 4}
-				class="fill-gray-500 text-[9px] dark:fill-gray-400"
-			>
-				{Math.round(chart.maxAlt)}°
-			</text>
-		{/if}
-		{#if chart.zeroY === null || Math.round(chart.minAlt) !== 0}
-			<text
-				x={4}
-				y={height - padB}
-				class="fill-gray-500 text-[9px] dark:fill-gray-400"
-			>
-				{Math.round(chart.minAlt)}°
-			</text>
-		{/if}
+		<text
+			x={4}
+			y={padT + 4}
+			class="fill-gray-500 text-[9px] dark:fill-gray-400"
+		>
+			360°
+		</text>
+		<text
+			x={4}
+			y={height - padB}
+			class="fill-gray-500 text-[9px] dark:fill-gray-400"
+		>
+			0°
+		</text>
 	</svg>
 	{#if chart.hasCentral}
 		<p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
@@ -357,6 +250,6 @@ function formatHm(iso: string | null): string {
 	{/if}
 {:else}
 	<p class="text-sm text-gray-500 dark:text-gray-400">
-		No altitude series for this location.
+		No azimuth series for this location.
 	</p>
 {/if}

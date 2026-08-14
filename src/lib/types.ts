@@ -80,16 +80,57 @@ export type PathStatus =
 	| "partial_only"
 	| "outside";
 
-export type AltitudeSample = {
+/** Time series sample from C1→C4 (altitude chart accepts `{ iso, altitudeDeg }`). */
+export type CircumstanceSample = {
 	iso: string;
 	altitudeDeg: number;
+	azimuthDeg: number;
+	obscuration: number;
+	magnitude: number;
+	moonSunRatio: number;
+	/** Instantaneous local type at this sample (drives coverage disk while scrubbing). */
+	localType: LocalEclipseType;
+	/**
+	 * Position angle of the Moon’s center relative to the Sun’s center, degrees,
+	 * counter-clockwise from celestial north (derived from local u,v).
+	 */
+	moonPaDeg: number;
+};
+
+export type DaylightPhase = "day" | "night" | "unknown";
+
+export type ContactDaylight = {
+	key: "c1" | "c2" | "max" | "c3" | "c4";
+	label: string;
+	phase: DaylightPhase;
+};
+
+export type GlobalEclipseFacts = {
+	type: EclipseType;
+	saros: number;
+	gamma: number;
+	maxMagnitude: number;
+	maxObscuration: number;
+	maxMoonSunRatio: number;
+	maxDurationSeconds: number;
+	maxCentralDurationSeconds: number;
+	pathWidthMeters: number;
+	greatestLat: number;
+	greatestLon: number;
+	greatestIso: string;
 };
 
 export type ObserverEclipseDetails = {
 	date: string;
 	location: ObserverLocation;
+	visible: boolean;
 	pathStatus: PathStatus;
 	localType: LocalEclipseType;
+	obscuration: number;
+	magnitude: number;
+	moonSunRatio: number;
+	durationSeconds: number;
+	centralDurationSeconds: number;
 	sunriseIso: string | null;
 	sunsetIso: string | null;
 	lookDirection: string;
@@ -97,7 +138,9 @@ export type ObserverEclipseDetails = {
 	lookAltitudeDeg: number | null;
 	/** Local umbra/antumbra path width in meters; 0 if partial/outside. */
 	pathWidthMeters: number;
-	altitudeSeries: AltitudeSample[];
+	series: CircumstanceSample[];
+	contactDaylight: ContactDaylight[];
+	global: GlobalEclipseFacts | null;
 	contacts: ContactTimes;
 };
 

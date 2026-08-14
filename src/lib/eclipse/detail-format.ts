@@ -1,4 +1,9 @@
-import type { PathStatus } from "$lib/types";
+import type {
+	DaylightPhase,
+	EclipseType,
+	LocalEclipseType,
+	PathStatus,
+} from "$lib/types";
 
 export function formatPathStatus(status: PathStatus): string {
 	switch (status) {
@@ -25,6 +30,40 @@ export function formatPathWidthKm(meters: number): string {
 		return `${km.toFixed(1)} km`;
 	}
 	return `${Math.round(meters)} m`;
+}
+
+export function formatDaylightPhase(phase: DaylightPhase): string {
+	switch (phase) {
+		case "day":
+			return "Day";
+		case "night":
+			return "Night";
+		case "unknown":
+			return "Unknown";
+	}
+}
+
+export function formatEclipseType(
+	type: EclipseType | LocalEclipseType | null | undefined,
+): string {
+	if (!type || type === "none") {
+		return "—";
+	}
+	return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+export function formatGamma(gamma: number): string {
+	if (!Number.isFinite(gamma)) {
+		return "—";
+	}
+	return gamma.toFixed(4);
+}
+
+export function formatMoonSunRatio(ratio: number): string {
+	if (!Number.isFinite(ratio) || ratio <= 0) {
+		return "—";
+	}
+	return ratio.toFixed(3);
 }
 
 const DIRECTION_LABELS: Record<string, string> = {

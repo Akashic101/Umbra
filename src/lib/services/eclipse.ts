@@ -1,3 +1,4 @@
+import { normalizeObserverDetails } from "$lib/eclipse/normalize-details";
 import type { WorkerRequest, WorkerResponse } from "$lib/eclipse/protocol";
 import type {
 	CatalogEntry,
@@ -47,12 +48,35 @@ function cloneLocation(location: ObserverLocation): ObserverLocation {
 	};
 }
 
+function looksLikeCurrentDetails(value: unknown): boolean {
+	if (!value || typeof value !== "object") {
+		return false;
+	}
+	const record = value as Record<string, unknown>;
+	return Array.isArray(record.series) && Array.isArray(record.contactDaylight);
+}
+
 export function createEclipseService(
 	deps: EclipseServiceDeps = {},
 ): EclipseService {
 	let worker: Worker | null = null;
 	let nextId = 1;
 	const pending = new Map<number, Pending>();
+
+	function rejectAll(error: Error): void {
+		for (const waiter of pending.values()) {
+			waiter.reject(error);
+		}
+		pending.clear();
+	}
+
+	function restartWorker(): void {
+		if (worker) {
+			worker.terminate();
+			worker = null;
+		}
+		rejectAll(new Error("Eclipse worker restarted."));
+	}
 
 	function ensureWorker(): Worker {
 		if (worker) {
@@ -81,10 +105,8 @@ export function createEclipseService(
 		);
 		worker.addEventListener("error", (event) => {
 			const error = new Error(event.message || "Eclipse worker failed.");
-			for (const waiter of pending.values()) {
-				waiter.reject(error);
-			}
-			pending.clear();
+			rejectAll(error);
+			worker = null;
 		});
 		return worker;
 	}
@@ -97,6 +119,26 @@ export function createEclipseService(
 				reject,
 			});
 			ensureWorker().postMessage({ id, ...message });
+		});
+	}
+
+	async function getObserverDetails(
+		date: string,
+		location: ObserverLocation,
+	): Promise<ObserverEclipseDetails> {
+		const body = {
+			type: "observerDetails" as const,
+			date,
+			location: cloneLocation(location),
+		};
+		let raw = await request<unknown>(body);
+		if (!looksLikeCurrentDetails(raw)) {
+			restartWorker();
+			raw = await request<unknown>(body);
+		}
+		return normalizeObserverDetails(raw, {
+			date,
+			location: cloneLocation(location),
 		});
 	}
 
@@ -114,12 +156,7 @@ export function createEclipseService(
 				location: cloneLocation(location),
 			}),
 		getPaths: (date) => request<EclipsePaths>({ type: "paths", date }),
-		getObserverDetails: (date, location) =>
-			request<ObserverEclipseDetails>({
-				type: "observerDetails",
-				date,
-				location: cloneLocation(location),
-			}),
+		getObserverDetails,
 	};
 }
 

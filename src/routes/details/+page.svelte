@@ -1,21 +1,37 @@
 <script lang="ts">
-import { Alert, Button, Card, Spinner } from "flowbite-svelte";
+import { Alert, Button, Card, Progressbar, Spinner } from "flowbite-svelte";
 import { untrack } from "svelte";
 import { page } from "$app/state";
 import AltitudeChart from "$lib/components/AltitudeChart.svelte";
+import AzimuthChart from "$lib/components/AzimuthChart.svelte";
+import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
+import CoverageDisk from "$lib/components/CoverageDisk.svelte";
+import CoverageScrubber from "$lib/components/CoverageScrubber.svelte";
 import FavoriteButton from "$lib/components/FavoriteButton.svelte";
+import ObscurationChart from "$lib/components/ObscurationChart.svelte";
+import PathPreviewMap from "$lib/components/PathPreviewMap.svelte";
 import StagesCard from "$lib/components/StagesCard.svelte";
 import { deviceTimeZone, parseDetailsQuery } from "$lib/details-query";
 import {
+	formatDaylightPhase,
+	formatEclipseType,
+	formatGamma,
+	formatMoonSunRatio,
 	formatPathStatus,
 	formatPathWidthKm,
 } from "$lib/eclipse/detail-format";
-import { formatContactTime, formatInstant } from "$lib/eclipse/time";
+import {
+	formatContactTime,
+	formatDuration,
+	formatInstant,
+	formatPercent,
+} from "$lib/eclipse/time";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
-import type { ObserverEclipseDetails } from "$lib/types";
+import type { EclipsePaths, ObserverEclipseDetails } from "$lib/types";
 
 let details = $state.raw<ObserverEclipseDetails | null>(null);
+let paths = $state.raw<EclipsePaths | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
 let loadToken = 0;
@@ -40,6 +56,7 @@ async function load(search: string): Promise<void> {
 	const token = ++loadToken;
 	if (!parsed) {
 		details = null;
+		paths = null;
 		error = null;
 		loading = false;
 		return;
@@ -47,6 +64,7 @@ async function load(search: string): Promise<void> {
 	loading = true;
 	error = null;
 	try {
+		// Load details first so a slow/restarted path worker cannot block the page.
 		const next = await eclipseService.getObserverDetails(
 			parsed.date,
 			parsed.location,
@@ -56,6 +74,15 @@ async function load(search: string): Promise<void> {
 		}
 		details = next;
 		error = null;
+		loading = false;
+
+		const nextPaths = await eclipseService
+			.getPaths(parsed.date)
+			.catch(() => null);
+		if (token !== loadToken) {
+			return;
+		}
+		paths = nextPaths;
 	} catch (err) {
 		if (token !== loadToken) {
 			return;
@@ -63,10 +90,8 @@ async function load(search: string): Promise<void> {
 		error =
 			err instanceof Error ? err.message : "Failed to load eclipse details.";
 		details = null;
-	} finally {
-		if (token === loadToken) {
-			loading = false;
-		}
+		paths = null;
+		loading = false;
 	}
 }
 </script>
@@ -94,6 +119,7 @@ async function load(search: string): Promise<void> {
 		</div>
 		<div class="flex shrink-0 items-center gap-2">
 			{#if query}
+				<CopyLinkButton />
 				<FavoriteButton date={query.date} location={query.location} />
 			{/if}
 			<Button color="alternative" size="sm" href="/">Back to map</Button>
@@ -158,6 +184,25 @@ async function load(search: string): Promise<void> {
 								{formatContactTime(details.contacts.max)}
 							</dd>
 						</dl>
+						{#if (details.contactDaylight ?? []).length > 0}
+							<ul
+								class="mt-3 divide-y divide-gray-200 text-sm dark:divide-gray-700"
+								aria-label="Contact daylight"
+							>
+								{#each details.contactDaylight ?? [] as row (row.key)}
+									<li
+										class="flex items-baseline justify-between gap-3 py-1 first:pt-0 last:pb-0"
+									>
+										<span class="text-gray-500 dark:text-gray-400"
+											>{row.label}</span
+										>
+										<span class="shrink-0 font-medium"
+											>{formatDaylightPhase(row.phase)}</span
+										>
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					</Card>
 
 					<Card class="w-full p-2 max-w-none" size="xl">
@@ -190,21 +235,193 @@ async function load(search: string): Promise<void> {
 						</p>
 					</Card>
 
+					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
+						<p class="mb-2 text-sm font-medium">Coverage</p>
+						{#if details.visible}
+							<div
+								class="flex flex-col items-center gap-3 sm:flex-row sm:items-start"
+							>
+								<CoverageDisk
+									size="lg"
+									obscuration={details.obscuration}
+									magnitude={details.magnitude}
+									moonSunRatio={details.moonSunRatio}
+									localType={details.localType}
+								/>
+								<div class="w-full min-w-0 flex-1 space-y-2">
+									<div>
+										<p class="mb-1 text-sm">Coverage (Sun area)</p>
+										<Progressbar
+											progress={details.obscuration * 100}
+											labelInside
+											size="h-4"
+										/>
+										<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+											Magnitude {formatPercent(details.magnitude)} of the Sun's
+											diameter
+										</p>
+									</div>
+									<p class="text-sm">
+										Total length {formatDuration(details.durationSeconds)}
+										{#if details.centralDurationSeconds}
+											· Central
+											{formatDuration(details.centralDurationSeconds)}
+										{/if}
+									</p>
+								</div>
+							</div>
+						{:else}
+							<p class="text-sm text-gray-500 dark:text-gray-400">
+								No local eclipse coverage at this location.
+							</p>
+						{/if}
+					</Card>
+
+					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
+						<p class="mb-2 text-sm font-medium">Global facts</p>
+						{#if details.global}
+							{@const g = details.global}
+							<dl
+								class="grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2"
+							>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">Type</dt>
+									<dd class="font-medium">{formatEclipseType(g.type)}</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">Saros</dt>
+									<dd class="tabular-nums">{g.saros}</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">Gamma</dt>
+									<dd class="tabular-nums">{formatGamma(g.gamma)}</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Max magnitude
+									</dt>
+									<dd class="tabular-nums">
+										{formatPercent(g.maxMagnitude)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Max obscuration
+									</dt>
+									<dd class="tabular-nums">
+										{formatPercent(g.maxObscuration)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Moon/Sun ratio
+									</dt>
+									<dd class="tabular-nums">
+										{formatMoonSunRatio(g.maxMoonSunRatio)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Max duration
+									</dt>
+									<dd class="tabular-nums">
+										{formatDuration(g.maxDurationSeconds)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Max central
+									</dt>
+									<dd class="tabular-nums">
+										{formatDuration(g.maxCentralDurationSeconds)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Path width
+									</dt>
+									<dd class="tabular-nums">
+										{formatPathWidthKm(g.pathWidthMeters)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">Greatest</dt>
+									<dd class="tabular-nums">
+										{formatCoordinates(g.greatestLat, g.greatestLon)}
+									</dd>
+								</div>
+								<div class="grid grid-cols-[auto_1fr] gap-x-4">
+									<dt class="text-gray-500 dark:text-gray-400">
+										Greatest time
+									</dt>
+									<dd class="tabular-nums">
+										{formatInstant(g.greatestIso)}
+									</dd>
+								</div>
+							</dl>
+						{:else}
+							<p class="text-sm text-gray-500 dark:text-gray-400">
+								No global catalog facts available.
+							</p>
+						{/if}
+					</Card>
+
 					<StagesCard
 						contacts={details.contacts}
 						localType={details.localType}
 					/>
 
+					<CoverageScrubber
+						series={details.series ?? []}
+						localType={details.localType}
+						contacts={details.contacts}
+					/>
+
 					<Card
-						class="w-full p-2 max-w-none col-span-2 lg:col-span-4"
+						class="col-span-2 w-full max-w-none p-2 lg:col-span-2"
 						size="xl"
 					>
+						<p class="mb-2 text-sm font-medium">Path preview</p>
+						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+							Penumbra, umbra/antumbra, and centerline with your observer pin
+						</p>
+						<PathPreviewMap location={details.location} {paths} />
+					</Card>
+
+					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
 						<p class="mb-2 text-sm font-medium">Sun altitude</p>
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
 							Apparent altitude from first to fourth contact
 						</p>
 						<AltitudeChart
-							samples={details.altitudeSeries}
+							samples={details.series ?? []}
+							contacts={details.contacts}
+							localType={details.localType}
+						/>
+					</Card>
+
+					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
+						<p class="mb-2 text-sm font-medium">Sun azimuth</p>
+						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+							Apparent azimuth from first to fourth contact (0–360°)
+						</p>
+						<AzimuthChart
+							samples={details.series ?? []}
+							contacts={details.contacts}
+							localType={details.localType}
+						/>
+					</Card>
+
+					<Card
+						class="w-full p-2 max-w-none col-span-2 lg:col-span-4"
+						size="xl"
+					>
+						<p class="mb-2 text-sm font-medium">Obscuration</p>
+						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+							Sun-area coverage from first to fourth contact
+						</p>
+						<ObscurationChart
+							samples={details.series ?? []}
 							contacts={details.contacts}
 							localType={details.localType}
 						/>

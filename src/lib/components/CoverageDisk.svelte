@@ -6,16 +6,20 @@ let {
 	magnitude = 0,
 	moonSunRatio = 1,
 	localType = "partial",
+	/** Degrees CCW from celestial north; −90 = from the left (legacy default). */
+	positionAngleDeg = -90,
+	size = "md",
 }: {
 	obscuration?: number;
 	magnitude?: number;
 	moonSunRatio?: number;
 	localType?: LocalEclipseType;
+	positionAngleDeg?: number;
+	size?: "md" | "lg";
 } = $props();
 
 const sunR = 54;
 const cy = 80;
-/** Keep the Sun right of center so a left-offset Moon still fits in frame. */
 const cx = 100;
 
 const moonR = $derived.by(() => {
@@ -29,45 +33,58 @@ const moonR = $derived.by(() => {
 	return sunR * ratio;
 });
 
-/** Centered for total/annular; offset left for partial. */
-const moonCx = $derived.by(() => {
+/**
+ * Centered for total/annular; offset by magnitude along sky PA for partial.
+ * PA is CCW from celestial north; SVG y increases downward so north = up.
+ */
+const moonPos = $derived.by(() => {
 	if (localType === "total" || localType === "annular") {
-		return cx;
+		return { x: cx, y: cy };
 	}
-	const mag = Math.min(1, Math.max(0, magnitude || obscuration));
-	const maxSep = sunR + moonR;
-	const sep = Math.max(0, (1 - mag) * maxSep);
-	return cx - sep;
+	const mag =
+		localType === "none"
+			? 0
+			: Math.min(1, Math.max(0, magnitude ?? obscuration ?? 0));
+	const sep = Math.max(0, (1 - mag) * (sunR + moonR));
+	const pa = (positionAngleDeg * Math.PI) / 180;
+	return {
+		x: cx + sep * Math.sin(pa),
+		y: cy - sep * Math.cos(pa),
+	};
 });
 
+/** Stable square frame for full moon travel in any PA (mag 0 → 1). */
 const viewBox = $derived.by(() => {
-	const pad = 10;
-	const left = Math.min(cx - sunR, moonCx - moonR) - pad;
-	const right = Math.max(cx + sunR, moonCx + moonR) + pad;
-	const width = Math.max(160, right - left);
-	return `${left} 0 ${width} 160`;
+	const pad = 12;
+	const extent = sunR + 2 * moonR + pad;
+	const left = cx - extent;
+	const top = cy - extent;
+	const frame = 2 * extent;
+	return `${left} ${top} ${frame} ${frame}`;
 });
 
 const label = $derived(
-	localType === "total"
-		? "Total eclipse: Moon covers the Sun"
-		: localType === "annular"
-			? "Annular eclipse: ring of sunlight"
-			: `Partial eclipse: ${(obscuration * 100).toFixed(0)}% of the Sun covered`,
+	localType === "none"
+		? "No eclipse: Moon does not cover the Sun"
+		: localType === "total"
+			? "Total eclipse: Moon covers the Sun"
+			: localType === "annular"
+				? "Annular eclipse: ring of sunlight"
+				: `Partial eclipse: ${(obscuration * 100).toFixed(0)}% of the Sun covered`,
 );
 </script>
 
 <svg
 	{viewBox}
-	class="mx-auto h-32 w-40 overflow-visible"
+	class="mx-auto overflow-visible {size === 'lg' ? 'h-52 w-52' : 'h-32 w-40'}"
 	role="img"
 	aria-label={label}
 >
 	<title>{label}</title>
 	<circle {cx} {cy} r={sunR} fill="#fbbf24" />
 	<circle
-		cx={moonCx}
-		{cy}
+		cx={moonPos.x}
+		cy={moonPos.y}
 		r={moonR}
 		fill="#111827"
 		class="dark:fill-gray-950"

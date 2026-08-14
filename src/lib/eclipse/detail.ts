@@ -1,6 +1,11 @@
 import { azimuth2direction, TimeOfInterest } from "@astronomy-bundle/core";
+import type { SolarEclipse } from "@astronomy-bundle/solar-eclipse";
 import type {
-	AltitudeSample,
+	CircumstanceSample,
+	ContactDaylight,
+	ContactTimes,
+	DaylightPhase,
+	GlobalEclipseFacts,
 	LocalEclipseType,
 	ObserverEclipseDetails,
 	ObserverLocation,
@@ -13,7 +18,7 @@ import { toiToIso } from "./time";
 const NOT_VISIBLE = "No solar eclipse visible at this location";
 const SAMPLE_COUNT = 32;
 
-export function pathStatusFromLocalType(type: LocalEclipseType): PathStatus {
+function pathStatusFromLocalType(type: LocalEclipseType): PathStatus {
 	switch (type) {
 		case "total":
 			return "inside_totality";
@@ -30,24 +35,32 @@ export function getObserverEclipseDetails(
 	date: string,
 	location: ObserverLocation,
 ): ObserverEclipseDetails {
+	const eclipse = getEclipse(date);
+	const global = buildGlobalFacts(eclipse);
+
 	try {
-		const local = getEclipse(date).getLocalEclipse(
-			toAstronomyLocation(location),
-		);
+		const local = eclipse.getLocalEclipse(toAstronomyLocation(location));
 		const type = local.getType() as LocalEclipseType;
-		const contacts = local.getContactTimes();
+		const visible = type !== "none";
+		const contactsRaw = local.getContactTimes();
 		const pathStatus = pathStatusFromLocalType(type);
 		const pathWidthMeters =
 			type === "total" || type === "annular" ? local.getUmbraPathWidth() : 0;
 
+		const obscuration = visible ? local.getMaxObscuration() : 0;
+		const magnitude = visible ? local.getMaxMagnitude() : 0;
+		const moonSunRatio = visible ? local.getMaxMoonSunRatio() : 0;
+		const durationSeconds = visible ? local.getDuration() : 0;
+		const centralDurationSeconds = visible ? local.getCentralDuration() : 0;
+
 		let lookAzimuth: number | null = null;
 		let lookAltitude: number | null = null;
 		let lookDirection = "—";
-		const altitudeSeries: AltitudeSample[] = [];
+		const series: CircumstanceSample[] = [];
 
-		if (contacts?.max) {
+		if (contactsRaw?.max) {
 			const atMax = local
-				.getCircumstances(contacts.max)
+				.getCircumstances(contactsRaw.max)
 				.getApparentTopocentricHorizontalCoordinates();
 			lookAzimuth = atMax.azimuth;
 			lookAltitude = atMax.altitude;
@@ -57,22 +70,40 @@ export function getObserverEclipseDetails(
 			);
 		}
 
-		if (contacts?.c1 && contacts?.c4) {
-			const startMs = contacts.c1.getDate().getTime();
-			const endMs = contacts.c4.getDate().getTime();
+		if (contactsRaw?.c1 && contactsRaw?.c4) {
+			const startMs = contactsRaw.c1.getDate().getTime();
+			const endMs = contactsRaw.c4.getDate().getTime();
 			const span = Math.max(endMs - startMs, 1);
+			// Diameter ratio is effectively constant over the eclipse; API only
+			// exposes max moon/sun ratio, not a per-sample value.
+			const sampleMoonSunRatio = moonSunRatio;
 			for (let i = 0; i < SAMPLE_COUNT; i++) {
 				const t = startMs + (span * i) / (SAMPLE_COUNT - 1);
 				const toi = TimeOfInterest.fromDate(new Date(t));
-				const horizontal = local
-					.getCircumstances(toi)
-					.getApparentTopocentricHorizontalCoordinates();
-				altitudeSeries.push({
+				const circ = local.getCircumstances(toi);
+				const horizontal = circ.getApparentTopocentricHorizontalCoordinates();
+				series.push({
 					iso: toi.getDate().toISOString(),
 					altitudeDeg: horizontal.altitude,
+					azimuthDeg: horizontal.azimuth,
+					obscuration: circ.getObscuration(),
+					magnitude: circ.getMagnitude(),
+					moonSunRatio: sampleMoonSunRatio,
+					localType: circ.getEclipseType() as LocalEclipseType,
+					moonPaDeg: moonPositionAngleDeg(circ),
 				});
 			}
 		}
+
+		const contacts: ContactTimes = {
+			c1: toiToIso(contactsRaw?.c1),
+			c2: toiToIso(contactsRaw?.c2),
+			max: toiToIso(contactsRaw?.max),
+			c3: toiToIso(contactsRaw?.c3),
+			c4: toiToIso(contactsRaw?.c4),
+		};
+		const sunriseIso = toiToIso(contactsRaw?.sunrise);
+		const sunsetIso = toiToIso(contactsRaw?.sunset);
 
 		return {
 			date,
@@ -82,34 +113,153 @@ export function getObserverEclipseDetails(
 				height: location.height,
 				label: location.label,
 			},
+			visible,
 			pathStatus,
 			localType: type,
-			sunriseIso: toiToIso(contacts?.sunrise),
-			sunsetIso: toiToIso(contacts?.sunset),
+			obscuration,
+			magnitude,
+			moonSunRatio,
+			durationSeconds,
+			centralDurationSeconds,
+			sunriseIso,
+			sunsetIso,
 			lookDirection,
 			lookAzimuthDeg: lookAzimuth,
 			lookAltitudeDeg: lookAltitude,
 			pathWidthMeters,
-			altitudeSeries,
-			contacts: {
-				c1: toiToIso(contacts?.c1),
-				c2: toiToIso(contacts?.c2),
-				max: toiToIso(contacts?.max),
-				c3: toiToIso(contacts?.c3),
-				c4: toiToIso(contacts?.c4),
-			},
+			series,
+			contactDaylight: buildContactDaylight(
+				contacts,
+				type,
+				sunriseIso,
+				sunsetIso,
+			),
+			global,
+			contacts,
 		};
 	} catch (error) {
 		if (isNotVisible(error)) {
-			return emptyDetails(date, location);
+			return emptyDetails(date, location, global);
 		}
 		throw error;
 	}
 }
 
+function buildGlobalFacts(eclipse: SolarEclipse): GlobalEclipseFacts {
+	const greatest = eclipse.getLocationOfGreatestEclipse();
+	return {
+		type: eclipse.getType() as GlobalEclipseFacts["type"],
+		saros: eclipse.getSaros(),
+		gamma: eclipse.getGamma(),
+		maxMagnitude: eclipse.getMaxMagnitude(),
+		maxObscuration: eclipse.getMaxObscuration(),
+		maxMoonSunRatio: eclipse.getMaxMoonSunRatio(),
+		maxDurationSeconds: eclipse.getMaxDuration(),
+		maxCentralDurationSeconds: eclipse.getMaxCentralDuration(),
+		pathWidthMeters: eclipse.getUmbraPathWidth(),
+		greatestLat: greatest.lat,
+		greatestLon: greatest.lon,
+		greatestIso: eclipse.getTimeOfGreatestEclipse().getDate().toISOString(),
+	};
+}
+
+function buildContactDaylight(
+	contacts: ContactTimes,
+	localType: LocalEclipseType,
+	sunriseIso: string | null,
+	sunsetIso: string | null,
+): ContactDaylight[] {
+	const defs: { key: ContactDaylight["key"]; iso: string | null }[] = [
+		{ key: "c1", iso: contacts.c1 },
+		{ key: "c2", iso: contacts.c2 },
+		{ key: "max", iso: contacts.max },
+		{ key: "c3", iso: contacts.c3 },
+		{ key: "c4", iso: contacts.c4 },
+	];
+	const rows: ContactDaylight[] = [];
+	for (const def of defs) {
+		if (!def.iso) {
+			continue;
+		}
+		rows.push({
+			key: def.key,
+			label: contactLabel(def.key, localType),
+			phase: daylightPhaseAt(def.iso, sunriseIso, sunsetIso),
+		});
+	}
+	return rows;
+}
+
+function contactLabel(
+	key: ContactDaylight["key"],
+	localType: LocalEclipseType,
+): string {
+	const c2Label =
+		localType === "total"
+			? "Totality begins"
+			: localType === "annular"
+				? "Annularity begins"
+				: "Second contact";
+	const c3Label =
+		localType === "total"
+			? "Totality ends"
+			: localType === "annular"
+				? "Annularity ends"
+				: "Third contact";
+	switch (key) {
+		case "c1":
+			return "First contact";
+		case "c2":
+			return c2Label;
+		case "max":
+			return "Greatest eclipse";
+		case "c3":
+			return c3Label;
+		case "c4":
+			return "Fourth contact";
+	}
+}
+
+/** Day if sunrise ≤ t ≤ sunset; overnight when sunset < sunrise. */
+function daylightPhaseAt(
+	iso: string,
+	sunriseIso: string | null,
+	sunsetIso: string | null,
+): DaylightPhase {
+	if (!sunriseIso || !sunsetIso) {
+		return "unknown";
+	}
+	const t = Date.parse(iso);
+	const sunrise = Date.parse(sunriseIso);
+	const sunset = Date.parse(sunsetIso);
+	if (
+		!Number.isFinite(t) ||
+		!Number.isFinite(sunrise) ||
+		!Number.isFinite(sunset)
+	) {
+		return "unknown";
+	}
+	if (sunset < sunrise) {
+		// Spans midnight: day from sunrise→midnight and midnight→sunset
+		return t >= sunrise || t <= sunset ? "day" : "night";
+	}
+	return t >= sunrise && t <= sunset ? "day" : "night";
+}
+
+function moonPositionAngleDeg(circ: unknown): number {
+	// Local u,v from Besselian circumstances (private field, not in public typings).
+	// Negate so the Moon sits on the contact side of the Sun (entry/exit match sky).
+	const uv = (circ as { circumstances?: { u?: number; v?: number } })
+		.circumstances;
+	const u = typeof uv?.u === "number" ? uv.u : 0;
+	const v = typeof uv?.v === "number" ? uv.v : 1;
+	return (Math.atan2(-u, -v) * 180) / Math.PI;
+}
+
 function emptyDetails(
 	date: string,
 	location: ObserverLocation,
+	global: GlobalEclipseFacts | null,
 ): ObserverEclipseDetails {
 	return {
 		date,
@@ -119,15 +269,23 @@ function emptyDetails(
 			height: location.height,
 			label: location.label,
 		},
+		visible: false,
 		pathStatus: "outside",
 		localType: "none",
+		obscuration: 0,
+		magnitude: 0,
+		moonSunRatio: 0,
+		durationSeconds: 0,
+		centralDurationSeconds: 0,
 		sunriseIso: null,
 		sunsetIso: null,
 		lookDirection: "—",
 		lookAzimuthDeg: null,
 		lookAltitudeDeg: null,
 		pathWidthMeters: 0,
-		altitudeSeries: [],
+		series: [],
+		contactDaylight: [],
+		global,
 		contacts: { c1: null, c2: null, max: null, c3: null, c4: null },
 	};
 }
