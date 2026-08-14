@@ -58,7 +58,7 @@ const contactRows = $derived.by(() => {
 });
 </script>
 
-<Card class="relative w-full max-w-none overflow-hidden" size="xl">
+<Card class="relative w-full p-2 max-w-none overflow-hidden" size="xl">
 	{#if !appState.selectedDate}
 		<p class="text-sm text-gray-500 dark:text-gray-400">
 			Select an eclipse to see local times.

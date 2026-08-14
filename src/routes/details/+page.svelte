@@ -97,7 +97,7 @@ async function load(search: string): Promise<void> {
 					class:opacity-40={loading}
 					aria-busy={loading}
 				>
-					<Card class="w-full max-w-none" size="xl">
+					<Card class="w-full p-2 max-w-none" size="xl">
 						<p class="mb-2 text-sm font-medium">Observer</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
 							<dt class="text-gray-500 dark:text-gray-400">Place</dt>
@@ -125,7 +125,7 @@ async function load(search: string): Promise<void> {
 						</dl>
 					</Card>
 
-					<Card class="w-full max-w-none" size="xl">
+					<Card class="w-full p-2 max-w-none" size="xl">
 						<p class="mb-2 text-sm font-medium">Daylight</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
 							<dt class="text-gray-500 dark:text-gray-400">Sunrise</dt>
@@ -143,7 +143,7 @@ async function load(search: string): Promise<void> {
 						</dl>
 					</Card>
 
-					<Card class="w-full max-w-none" size="xl">
+					<Card class="w-full p-2 max-w-none" size="xl">
 						<p class="mb-2 text-sm font-medium">Where to look</p>
 						<p class="text-base font-medium">{details.lookDirection}</p>
 						{#if details.lookAzimuthDeg !== null}
@@ -155,7 +155,7 @@ async function load(search: string): Promise<void> {
 						{/if}
 					</Card>
 
-					<Card class="w-full max-w-none" size="xl">
+					<Card class="w-full p-2 max-w-none" size="xl">
 						<p class="mb-2 text-sm font-medium">Path</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
 							<dt class="text-gray-500 dark:text-gray-400">Status</dt>
@@ -179,7 +179,7 @@ async function load(search: string): Promise<void> {
 					/>
 
 					<Card
-						class="w-full max-w-none col-span-2 lg:col-span-4"
+						class="w-full p-2 max-w-none col-span-2 lg:col-span-4"
 						size="xl"
 					>
 						<p class="mb-2 text-sm font-medium">Sun altitude</p>

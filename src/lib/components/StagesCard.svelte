@@ -80,7 +80,7 @@ $effect(() => {
 });
 </script>
 
-<Card class="w-full max-w-none col-span-2 lg:col-span-4" size="xl">
+<Card class="w-full p-2 max-w-none col-span-2 lg:col-span-4" size="xl">
 	<p class="mb-2 text-sm font-medium">Stages</p>
 	<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
 		Local contact times down to the second
