@@ -1,4 +1,5 @@
 import { eclipseService } from "$lib/services/eclipse";
+import { favoriteId, favoritesService } from "$lib/services/favorites";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
 import { geolocation } from "$lib/services/geolocation";
 import { persistence } from "$lib/services/persistence";
@@ -8,6 +9,7 @@ import {
 	type EclipseFilters,
 	type EclipsePaths,
 	type EclipseType,
+	type FavoriteEclipse,
 	type LocalCircumstances,
 	type LocalSummary,
 	localIsoDate,
@@ -35,8 +37,22 @@ export class AppState {
 	ready = $state(false);
 	/** Sidebar tab: find/filter eclipses vs local circumstances. */
 	panelTab = $state<"eclipses" | "details">("eclipses");
+	favorites = $state.raw<FavoriteEclipse[]>(favoritesService.load());
 
 	filteredCatalog = $derived.by(() => this.applyFilters());
+
+	/** Upcoming first, then chronological. */
+	sortedFavorites = $derived.by(() => {
+		const today = localIsoDate();
+		return [...this.favorites].sort((a, b) => {
+			const aUpcoming = a.date >= today ? 0 : 1;
+			const bUpcoming = b.date >= today ? 0 : 1;
+			if (aUpcoming !== bUpcoming) {
+				return aUpcoming - bUpcoming;
+			}
+			return a.date.localeCompare(b.date);
+		});
+	});
 
 	async init(): Promise<void> {
 		this.loadingCatalog = true;
@@ -297,6 +313,37 @@ export class AppState {
 			selectedDate: this.selectedDate,
 			filters: this.filters,
 		});
+	}
+
+	isFavorite(date: string, location: ObserverLocation): boolean {
+		const id = favoriteId(date, location);
+		return this.favorites.some((item) => item.id === id);
+	}
+
+	toggleFavorite(date: string, location: ObserverLocation): void {
+		const id = favoriteId(date, location);
+		if (this.favorites.some((item) => item.id === id)) {
+			this.favorites = this.favorites.filter((item) => item.id !== id);
+		} else {
+			const next: FavoriteEclipse = {
+				id,
+				date,
+				location: {
+					lat: location.lat,
+					lon: location.lon,
+					height: location.height,
+					label: location.label,
+				},
+				savedAt: new Date().toISOString(),
+			};
+			this.favorites = [...this.favorites, next];
+		}
+		favoritesService.save(this.favorites);
+	}
+
+	removeFavorite(id: string): void {
+		this.favorites = this.favorites.filter((item) => item.id !== id);
+		favoritesService.save(this.favorites);
 	}
 }
 

@@ -2,6 +2,7 @@
 import "./layout.css";
 import { DarkMode, NavBrand, Navbar } from "flowbite-svelte";
 import favicon from "$lib/assets/favicon.svg";
+import FavoritesMenu from "$lib/components/FavoritesMenu.svelte";
 
 let { children } = $props();
 </script>
@@ -21,7 +22,10 @@ let { children } = $props();
 			<img src={favicon} alt="" class="me-2 h-6 w-6">
 			<span class="text-lg font-semibold">Umbra</span>
 		</NavBrand>
-		<DarkMode />
+		<div class="flex items-center gap-2">
+			<FavoritesMenu />
+			<DarkMode />
+		</div>
 	</Navbar>
 	<div class="min-h-0 flex-1">
 		{@render children()}

@@ -107,6 +107,14 @@ export type PersistedAppState = {
 	filters: EclipseFilters;
 };
 
+/** Saved eclipse + observer location for quick details access. */
+export type FavoriteEclipse = {
+	id: string;
+	date: string;
+	location: ObserverLocation;
+	savedAt: string;
+};
+
 export const CATALOG_YEAR_MIN = 1900;
 export const CATALOG_YEAR_MAX = 2100;
 

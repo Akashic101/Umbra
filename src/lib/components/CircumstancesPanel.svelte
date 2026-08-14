@@ -9,6 +9,7 @@ import {
 	localDateKey,
 } from "$lib/eclipse/time";
 import CoverageDisk from "./CoverageDisk.svelte";
+import FavoriteButton from "./FavoriteButton.svelte";
 
 const contacts = $derived(appState.circumstances?.contacts);
 const showOverlay = $derived(appState.loadingDetail || appState.loadingLocal);
@@ -116,10 +117,17 @@ const contactRows = $derived.by(() => {
 					{formatDuration(appState.circumstances.centralDurationSeconds)}
 				{/if}
 			</p>
-			{#if detailsHref}
-				<Button href={detailsHref} color="primary" class="w-full"
-					>More info</Button
-				>
+			{#if detailsHref && appState.selectedDate && appState.location}
+				<div class="flex w-full flex-col gap-2">
+					<FavoriteButton
+						date={appState.selectedDate}
+						location={appState.location}
+						class="w-full"
+					/>
+					<Button href={detailsHref} color="primary" class="w-full"
+						>More info</Button
+					>
+				</div>
 			{/if}
 		</div>
 	{:else if appState.circumstances}
@@ -127,10 +135,17 @@ const contactRows = $derived.by(() => {
 			<Alert color="blue">
 				This eclipse is not visible from the selected location.
 			</Alert>
-			{#if detailsHref}
-				<Button href={detailsHref} color="alternative" class="mt-3 w-full"
-					>More info</Button
-				>
+			{#if detailsHref && appState.selectedDate && appState.location}
+				<div class="mt-3 flex w-full flex-col gap-2">
+					<FavoriteButton
+						date={appState.selectedDate}
+						location={appState.location}
+						class="w-full"
+					/>
+					<Button href={detailsHref} color="alternative" class="w-full"
+						>More info</Button
+					>
+				</div>
 			{/if}
 		</div>
 	{:else if !appState.location}

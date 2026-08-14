@@ -1,7 +1,9 @@
 <script lang="ts">
 import { Alert, Button, Card, Spinner } from "flowbite-svelte";
+import { untrack } from "svelte";
 import { page } from "$app/state";
 import AltitudeChart from "$lib/components/AltitudeChart.svelte";
+import FavoriteButton from "$lib/components/FavoriteButton.svelte";
 import StagesCard from "$lib/components/StagesCard.svelte";
 import { deviceTimeZone, parseDetailsQuery } from "$lib/details-query";
 import {
@@ -12,7 +14,6 @@ import { formatContactTime, formatInstant } from "$lib/eclipse/time";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
 import type { ObserverEclipseDetails } from "$lib/types";
-import { untrack } from "svelte";
 
 let details = $state.raw<ObserverEclipseDetails | null>(null);
 let loading = $state(true);
@@ -91,7 +92,12 @@ async function load(search: string): Promise<void> {
 				</p>
 			{/if}
 		</div>
-		<Button color="alternative" size="sm" href="/">Back to map</Button>
+		<div class="flex shrink-0 items-center gap-2">
+			{#if query}
+				<FavoriteButton date={query.date} location={query.location} />
+			{/if}
+			<Button color="alternative" size="sm" href="/">Back to map</Button>
+		</div>
 	</div>
 
 	{#if !query}
