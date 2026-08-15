@@ -1,4 +1,11 @@
 <script lang="ts">
+import {
+	chartXAtMs,
+	contactMarkerDefs,
+	formatChartHm,
+	thirtyMinuteTickMs,
+	type ContactMarkerKey,
+} from "$lib/eclipse/chart-time";
 import { formatCentralWord } from "$lib/eclipse/detail-format";
 import { m } from "$lib/paraglide/messages.js";
 import type { ContactTimes, LocalEclipseType } from "$lib/types";
@@ -20,16 +27,18 @@ const height = 148;
 const padL = 36;
 const padR = 12;
 const padT = 18;
-const padB = 28;
+const padB = 32;
 const minObsc = 0;
 const maxObsc = 1;
 
 type ContactMarker = {
-	key: "c1" | "c2" | "c3" | "c4";
+	key: ContactMarkerKey;
 	label: string;
 	x: number;
 	y: number;
 };
+
+type TimeTick = { ms: number; x: number; label: string; showLabel: boolean };
 
 const chart = $derived.by(() => {
 	if (samples.length < 2) {
@@ -37,6 +46,7 @@ const chart = $derived.by(() => {
 	}
 	const plotW = width - padL - padR;
 	const plotH = height - padT - padB;
+	const plotBottom = padT + plotH;
 	const startMs = Date.parse(samples[0].iso);
 	const endMs = Date.parse(samples.at(-1)!.iso);
 	const spanMs = Math.max(endMs - startMs, 1);
@@ -50,18 +60,21 @@ const chart = $derived.by(() => {
 	const polyline = points
 		.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
 		.join(" ");
-	const startLabel = formatHm(samples[0]?.iso ?? null);
-	const endLabel = formatHm(samples.at(-1)?.iso ?? null);
+	const startLabel = formatChartHm(startMs);
+	const endLabel = formatChartHm(endMs);
 
-	const markerDefs: { key: ContactMarker["key"]; iso: string | null }[] = [
-		{ key: "c1", iso: contacts.c1 },
-		{ key: "c2", iso: contacts.c2 },
-		{ key: "c3", iso: contacts.c3 },
-		{ key: "c4", iso: contacts.c4 },
-	];
+	const timeTicks: TimeTick[] = thirtyMinuteTickMs(startMs, endMs).map((ms) => {
+		const x = chartXAtMs(ms, startMs, spanMs, padL, plotW);
+		return {
+			ms,
+			x,
+			label: formatChartHm(ms),
+			showLabel: x > padL + 18 && x < width - padR - 18,
+		};
+	});
 
 	const markers: ContactMarker[] = [];
-	for (const def of markerDefs) {
+	for (const def of contactMarkerDefs(contacts)) {
 		if (!def.iso) {
 			continue;
 		}
@@ -71,7 +84,7 @@ const chart = $derived.by(() => {
 		}
 		markers.push({
 			key: def.key,
-			label: def.key.toUpperCase(),
+			label: def.label,
 			x: pos.x,
 			y: pos.y,
 		});
@@ -85,10 +98,12 @@ const chart = $derived.by(() => {
 		polyline,
 		startLabel,
 		endLabel,
+		timeTicks,
 		markers,
 		hasCentral,
 		centralWord,
 		plotTop: padT,
+		plotBottom,
 	};
 });
 
@@ -111,7 +126,7 @@ function pointAtIso(
 	if (!Number.isFinite(ms)) {
 		return null;
 	}
-	const x = padL + (plotW * (ms - startMs)) / spanMs;
+	const x = chartXAtMs(ms, startMs, spanMs, padL, plotW);
 	const obsc = obscurationAtMs(ms, series);
 	if (obsc === null) {
 		return null;
@@ -157,17 +172,6 @@ function obscurationAtMs(
 	}
 	return null;
 }
-
-function formatHm(iso: string | null): string {
-	if (!iso) {
-		return "";
-	}
-	return new Intl.DateTimeFormat(undefined, {
-		hour: "2-digit",
-		minute: "2-digit",
-		hour12: false,
-	}).format(new Date(iso));
-}
 </script>
 
 {#if chart}
@@ -178,12 +182,33 @@ function formatHm(iso: string | null): string {
 		aria-label={m.obscurationAria()}
 	>
 		<title>{m.obscurationTitle()}</title>
+		{#each chart.timeTicks as tick (tick.ms)}
+			<line
+				x1={tick.x}
+				x2={tick.x}
+				y1={chart.plotTop}
+				y2={chart.plotBottom}
+				class="stroke-gray-300 dark:stroke-gray-600"
+				stroke-width="1"
+				opacity="0.5"
+			/>
+			{#if tick.showLabel}
+				<text
+					x={tick.x}
+					y={height - 6}
+					text-anchor="middle"
+					class="fill-gray-500 text-[7px] dark:fill-gray-400"
+				>
+					{tick.label}
+				</text>
+			{/if}
+		{/each}
 		{#each chart.markers as marker (marker.key)}
 			<line
 				x1={marker.x}
 				x2={marker.x}
 				y1={chart.plotTop}
-				y2={marker.y}
+				y2={chart.plotBottom}
 				class="stroke-gray-400 dark:stroke-gray-500"
 				stroke-dasharray="2 2"
 				stroke-width="1"
