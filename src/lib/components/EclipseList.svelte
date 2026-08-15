@@ -8,7 +8,11 @@ import {
 } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
 import { formatEclipseType } from "$lib/eclipse/detail-format";
-import { formatDuration, formatPercent } from "$lib/eclipse/time";
+import {
+	formatDuration,
+	formatIsoDate,
+	formatPercent,
+} from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
 
 const PAGE_SIZE = 10;
@@ -63,7 +67,7 @@ function onPageChange(next: number) {
 				{@const displayType = local?.visible ? local.localType : entry.type}
 				<div class="flex w-full items-start justify-between gap-2">
 					<div>
-						<p class="font-medium">{entry.date}</p>
+						<p class="font-medium">{formatIsoDate(entry.date)}</p>
 						<p class="text-xs text-gray-500 dark:text-gray-400">
 							{#if local?.visible}
 								{#if local.localType === entry.type}

@@ -8,6 +8,7 @@ import {
 import { CloseOutline, StarOutline } from "flowbite-svelte-icons";
 import { appState } from "$lib/app-state.svelte";
 import { serializeDetailsQuery } from "$lib/details-query";
+import { formatIsoDate } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
 import { localizeHref } from "$lib/paraglide/runtime";
 import { formatCoordinates } from "$lib/services/geocoding";
@@ -68,7 +69,7 @@ function remove(event: MouseEvent, id: string): void {
 					class="flex items-start gap-2 py-2"
 				>
 					<span class="min-w-0 flex-1">
-						<span class="block font-medium tabular-nums">{fav.date}</span>
+						<span class="block font-medium">{formatIsoDate(fav.date)}</span>
 						<span
 							class="block truncate text-xs text-gray-500 dark:text-gray-400"
 							title={placeLabel(fav.location)}

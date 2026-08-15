@@ -26,6 +26,7 @@ import {
 	formatContactTime,
 	formatDuration,
 	formatInstant,
+	formatIsoDate,
 	formatPercent,
 } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
@@ -106,7 +107,7 @@ async function load(search: string): Promise<void> {
 		<div class="min-w-0">
 			<p class="text-xs text-gray-500 dark:text-gray-400">{m.pageEyebrow()}</p>
 			<h1 class="text-xl font-semibold">
-				{query?.date ?? m.missingSelection()}
+				{query ? formatIsoDate(query.date) : m.missingSelection()}
 			</h1>
 			{#if query}
 				{@const locationText =

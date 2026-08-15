@@ -62,6 +62,27 @@ export function localDateKey(iso: string, timeZone = deviceTimeZone()): string {
 	}).format(new Date(iso));
 }
 
+/**
+ * Format a catalog/calendar date (YYYY-MM-DD) for display in the active locale.
+ * Parsed as a civil date (not UTC midnight) so the day never shifts by timezone.
+ */
+export function formatIsoDate(isoDate: string | null | undefined): string {
+	if (!isoDate) {
+		return m.emDash();
+	}
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+	if (!match) {
+		return isoDate;
+	}
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const date = new Date(year, month - 1, day);
+	return new Intl.DateTimeFormat(getLocale(), { dateStyle: "medium" }).format(
+		date,
+	);
+}
+
 export function formatDuration(seconds: number): string {
 	if (!Number.isFinite(seconds) || seconds <= 0) {
 		return m.emDash();
