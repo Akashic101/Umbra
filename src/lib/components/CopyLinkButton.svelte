@@ -2,6 +2,7 @@
 import { Button } from "flowbite-svelte";
 import { LinkOutline } from "flowbite-svelte-icons";
 import { page } from "$app/state";
+import { m } from "$lib/paraglide/messages.js";
 
 let {
 	size = "sm",
@@ -40,8 +41,8 @@ async function copyLink(): Promise<void> {
 	{size}
 	class={className}
 	onclick={copyLink}
-	aria-label={copied ? "Link copied" : "Copy link to this page"}
+	aria-label={copied ? m.linkCopiedAria() : m.copyLinkAria()}
 >
 	<LinkOutline class="h-4 w-4" />
-	<span>{copied ? "Copied" : "Copy link"}</span>
+	<span>{copied ? m.copied() : m.copyLink()}</span>
 </Button>

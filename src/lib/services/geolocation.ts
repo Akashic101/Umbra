@@ -1,3 +1,5 @@
+import { m } from "$lib/paraglide/messages.js";
+
 export type GeoPosition = {
 	lat: number;
 	lon: number;
@@ -47,7 +49,7 @@ export function createGeolocationService(
 				return Promise.reject(
 					new GeolocationError({
 						code: 0,
-						message: "Geolocation is not available in this environment.",
+						message: m.errorGeolocationUnavailable(),
 					}),
 				);
 			}
@@ -67,7 +69,7 @@ export function createGeolocationService(
 						reject(
 							new GeolocationError({
 								code: error.code,
-								message: error.message || "Unable to get current position.",
+								message: error.message || m.errorUnableCurrentPosition(),
 							}),
 						);
 					},

@@ -99,9 +99,9 @@ export type CircumstanceSample = {
 
 export type DaylightPhase = "day" | "night" | "unknown";
 
+/** Worker payload: labels are built in the UI so they can be localized. */
 export type ContactDaylight = {
 	key: "c1" | "c2" | "max" | "c3" | "c4";
-	label: string;
 	phase: DaylightPhase;
 };
 
@@ -133,7 +133,8 @@ export type ObserverEclipseDetails = {
 	centralDurationSeconds: number;
 	sunriseIso: string | null;
 	sunsetIso: string | null;
-	lookDirection: string;
+	/** Compass code such as "WNW"; the UI turns it into a localized name. */
+	lookDirectionCode: string | null;
 	lookAzimuthDeg: number | null;
 	lookAltitudeDeg: number | null;
 	/** Local umbra/antumbra path width in meters; 0 if partial/outside. */

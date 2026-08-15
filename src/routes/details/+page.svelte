@@ -13,9 +13,11 @@ import PathPreviewMap from "$lib/components/PathPreviewMap.svelte";
 import StagesCard from "$lib/components/StagesCard.svelte";
 import { deviceTimeZone, parseDetailsQuery } from "$lib/details-query";
 import {
+	formatContactLabel,
 	formatDaylightPhase,
 	formatEclipseType,
 	formatGamma,
+	formatLookDirection,
 	formatMoonSunRatio,
 	formatPathStatus,
 	formatPathWidthKm,
@@ -26,6 +28,8 @@ import {
 	formatInstant,
 	formatPercent,
 } from "$lib/eclipse/time";
+import { m } from "$lib/paraglide/messages.js";
+import { localizeHref } from "$lib/paraglide/runtime";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
 import type { EclipsePaths, ObserverEclipseDetails } from "$lib/types";
@@ -87,8 +91,7 @@ async function load(search: string): Promise<void> {
 		if (token !== loadToken) {
 			return;
 		}
-		error =
-			err instanceof Error ? err.message : "Failed to load eclipse details.";
+		error = err instanceof Error ? err.message : m.errorFailedLoadDetails();
 		details = null;
 		paths = null;
 		loading = false;
@@ -101,9 +104,9 @@ async function load(search: string): Promise<void> {
 >
 	<div class="flex w-full items-center justify-between gap-3">
 		<div class="min-w-0">
-			<p class="text-xs text-gray-500 dark:text-gray-400">Eclipse details</p>
+			<p class="text-xs text-gray-500 dark:text-gray-400">{m.pageEyebrow()}</p>
 			<h1 class="text-xl font-semibold">
-				{query?.date ?? "Missing selection"}
+				{query?.date ?? m.missingSelection()}
 			</h1>
 			{#if query}
 				{@const locationText =
@@ -122,16 +125,15 @@ async function load(search: string): Promise<void> {
 				<CopyLinkButton />
 				<FavoriteButton date={query.date} location={query.location} />
 			{/if}
-			<Button color="alternative" size="sm" href="/">Back to map</Button>
+			<Button color="alternative" size="sm" href={localizeHref("/")}>
+				{m.backToMap()}
+			</Button>
 		</div>
 	</div>
 
 	{#if !query}
-		<Alert color="yellow">
-			Open this page from an eclipse’s Details tab so location and date are
-			included in the URL.
-		</Alert>
-		<Button href="/">Choose a location</Button>
+		<Alert color="yellow">{m.missingQueryAlert()}</Alert>
+		<Button href={localizeHref("/")}>{m.chooseLocation()}</Button>
 	{:else}
 		<div class="relative flex w-full flex-col gap-4">
 			{#if details}
@@ -141,9 +143,9 @@ async function load(search: string): Promise<void> {
 					aria-busy={loading}
 				>
 					<Card class="w-full p-2 max-w-none" size="xl">
-						<p class="mb-2 text-sm font-medium">Observer</p>
+						<p class="mb-2 text-sm font-medium">{m.observerHeading()}</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-							<dt class="text-gray-500 dark:text-gray-400">Place</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.place()}</dt>
 							<dd class="truncate" title={details.location.label}>
 								{details.location.label ||
 									formatCoordinates(
@@ -151,35 +153,38 @@ async function load(search: string): Promise<void> {
 										details.location.lon,
 									)}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Coordinates</dt>
+							<dt class="text-gray-500 dark:text-gray-400">
+								{m.coordinates()}
+							</dt>
 							<dd class="font-medium tabular-nums">
 								{formatCoordinates(
 									details.location.lat,
 									details.location.lon,
 								)}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Elevation</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.elevation()}</dt>
 							<dd class="tabular-nums">
-								{Math.round(details.location.height)}
-								m
+								{m.elevationMeters({
+									meters: Math.round(details.location.height),
+								})}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Timezone</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.timezone()}</dt>
 							<dd>{timeZone}</dd>
 						</dl>
 					</Card>
 
 					<Card class="w-full p-2 max-w-none" size="xl">
-						<p class="mb-2 text-sm font-medium">Daylight</p>
+						<p class="mb-2 text-sm font-medium">{m.daylightHeading()}</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-							<dt class="text-gray-500 dark:text-gray-400">Sunrise</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.sunrise()}</dt>
 							<dd class="tabular-nums">
 								{formatInstant(details.sunriseIso)}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Sunset</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.sunset()}</dt>
 							<dd class="tabular-nums">
 								{formatInstant(details.sunsetIso)}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Greatest</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.greatest()}</dt>
 							<dd class="tabular-nums">
 								{formatContactTime(details.contacts.max)}
 							</dd>
@@ -187,14 +192,14 @@ async function load(search: string): Promise<void> {
 						{#if (details.contactDaylight ?? []).length > 0}
 							<ul
 								class="mt-3 divide-y divide-gray-200 text-sm dark:divide-gray-700"
-								aria-label="Contact daylight"
+								aria-label={m.contactDaylightAria()}
 							>
 								{#each details.contactDaylight ?? [] as row (row.key)}
 									<li
 										class="flex items-baseline justify-between gap-3 py-1 first:pt-0 last:pb-0"
 									>
 										<span class="text-gray-500 dark:text-gray-400"
-											>{row.label}</span
+											>{formatContactLabel(row.key, details.localType)}</span
 										>
 										<span class="shrink-0 font-medium"
 											>{formatDaylightPhase(row.phase)}</span
@@ -206,37 +211,42 @@ async function load(search: string): Promise<void> {
 					</Card>
 
 					<Card class="w-full p-2 max-w-none" size="xl">
-						<p class="mb-2 text-sm font-medium">Where to look</p>
-						<p class="text-base font-medium">{details.lookDirection}</p>
+						<p class="mb-2 text-sm font-medium">{m.whereToLook()}</p>
+						<p class="text-base font-medium">
+							{formatLookDirection(
+								details.lookDirectionCode,
+								details.lookAltitudeDeg,
+							)}
+						</p>
 						{#if details.lookAzimuthDeg !== null}
 							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-								Azimuth {details.lookAzimuthDeg.toFixed(1)}° · altitude
-								{(details.lookAltitudeDeg ?? 0).toFixed(1)}° (apparent, at
-								greatest eclipse)
+								{m.lookAzimuthAltitude({
+									azimuth: details.lookAzimuthDeg.toFixed(1),
+									altitude: (details.lookAltitudeDeg ?? 0).toFixed(1),
+								})}
 							</p>
 						{/if}
 					</Card>
 
 					<Card class="w-full p-2 max-w-none" size="xl">
-						<p class="mb-2 text-sm font-medium">Path</p>
+						<p class="mb-2 text-sm font-medium">{m.pathHeading()}</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-							<dt class="text-gray-500 dark:text-gray-400">Status</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.status()}</dt>
 							<dd class="font-medium">
 								{formatPathStatus(details.pathStatus)}
 							</dd>
-							<dt class="text-gray-500 dark:text-gray-400">Path width</dt>
+							<dt class="text-gray-500 dark:text-gray-400">{m.pathWidth()}</dt>
 							<dd class="tabular-nums">
 								{formatPathWidthKm(details.pathWidthMeters)}
 							</dd>
 						</dl>
 						<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-							Local umbra/antumbra band width at this place (not the global
-							maximum).
+							{m.pathWidthHint()}
 						</p>
 					</Card>
 
 					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
-						<p class="mb-2 text-sm font-medium">Coverage</p>
+						<p class="mb-2 text-sm font-medium">{m.coverageHeading()}</p>
 						{#if details.visible}
 							<div
 								class="flex flex-col items-center gap-3 sm:flex-row sm:items-start"
@@ -250,55 +260,64 @@ async function load(search: string): Promise<void> {
 								/>
 								<div class="w-full min-w-0 flex-1 space-y-2">
 									<div>
-										<p class="mb-1 text-sm">Coverage (Sun area)</p>
+										<p class="mb-1 text-sm">{m.coverageSunArea()}</p>
 										<Progressbar
 											progress={details.obscuration * 100}
 											labelInside
 											size="h-4"
 										/>
 										<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-											Magnitude {formatPercent(details.magnitude)} of the Sun's
-											diameter
+											{m.magnitudeOfDiameter({
+												percent: formatPercent(details.magnitude),
+											})}
 										</p>
 									</div>
 									<p class="text-sm">
-										Total length {formatDuration(details.durationSeconds)}
+										{m.totalLength({
+											duration: formatDuration(details.durationSeconds),
+										})}
 										{#if details.centralDurationSeconds}
-											· Central
-											{formatDuration(details.centralDurationSeconds)}
+											·
+											{m.centralDuration({
+												duration: formatDuration(
+													details.centralDurationSeconds,
+												),
+											})}
 										{/if}
 									</p>
 								</div>
 							</div>
 						{:else}
 							<p class="text-sm text-gray-500 dark:text-gray-400">
-								No local eclipse coverage at this location.
+								{m.noLocalCoverage()}
 							</p>
 						{/if}
 					</Card>
 
 					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
-						<p class="mb-2 text-sm font-medium">Global facts</p>
+						<p class="mb-2 text-sm font-medium">{m.globalFacts()}</p>
 						{#if details.global}
 							{@const g = details.global}
 							<dl
 								class="grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2"
 							>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
-									<dt class="text-gray-500 dark:text-gray-400">Type</dt>
+									<dt class="text-gray-500 dark:text-gray-400">
+										{m.typeHeading()}
+									</dt>
 									<dd class="font-medium">{formatEclipseType(g.type)}</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
-									<dt class="text-gray-500 dark:text-gray-400">Saros</dt>
+									<dt class="text-gray-500 dark:text-gray-400">{m.saros()}</dt>
 									<dd class="tabular-nums">{g.saros}</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
-									<dt class="text-gray-500 dark:text-gray-400">Gamma</dt>
+									<dt class="text-gray-500 dark:text-gray-400">{m.gamma()}</dt>
 									<dd class="tabular-nums">{formatGamma(g.gamma)}</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Max magnitude
+										{m.maxMagnitude()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatPercent(g.maxMagnitude)}
@@ -306,7 +325,7 @@ async function load(search: string): Promise<void> {
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Max obscuration
+										{m.maxObscuration()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatPercent(g.maxObscuration)}
@@ -314,7 +333,7 @@ async function load(search: string): Promise<void> {
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Moon/Sun ratio
+										{m.moonSunRatio()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatMoonSunRatio(g.maxMoonSunRatio)}
@@ -322,7 +341,7 @@ async function load(search: string): Promise<void> {
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Max duration
+										{m.maxDuration()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatDuration(g.maxDurationSeconds)}
@@ -330,7 +349,7 @@ async function load(search: string): Promise<void> {
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Max central
+										{m.maxCentral()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatDuration(g.maxCentralDurationSeconds)}
@@ -338,21 +357,23 @@ async function load(search: string): Promise<void> {
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Path width
+										{m.pathWidth()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatPathWidthKm(g.pathWidthMeters)}
 									</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
-									<dt class="text-gray-500 dark:text-gray-400">Greatest</dt>
+									<dt class="text-gray-500 dark:text-gray-400">
+										{m.greatest()}
+									</dt>
 									<dd class="tabular-nums">
 										{formatCoordinates(g.greatestLat, g.greatestLon)}
 									</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">
 									<dt class="text-gray-500 dark:text-gray-400">
-										Greatest time
+										{m.greatestTime()}
 									</dt>
 									<dd class="tabular-nums">
 										{formatInstant(g.greatestIso)}
@@ -361,7 +382,7 @@ async function load(search: string): Promise<void> {
 							</dl>
 						{:else}
 							<p class="text-sm text-gray-500 dark:text-gray-400">
-								No global catalog facts available.
+								{m.noGlobalFacts()}
 							</p>
 						{/if}
 					</Card>
@@ -381,17 +402,17 @@ async function load(search: string): Promise<void> {
 						class="col-span-2 w-full max-w-none p-2 lg:col-span-2"
 						size="xl"
 					>
-						<p class="mb-2 text-sm font-medium">Path preview</p>
+						<p class="mb-2 text-sm font-medium">{m.pathPreview()}</p>
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-							Penumbra, umbra/antumbra, and centerline with your observer pin
+							{m.pathPreviewHint()}
 						</p>
 						<PathPreviewMap location={details.location} {paths} />
 					</Card>
 
 					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
-						<p class="mb-2 text-sm font-medium">Sun altitude</p>
+						<p class="mb-2 text-sm font-medium">{m.sunAltitude()}</p>
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-							Apparent altitude from first to fourth contact
+							{m.sunAltitudeHint()}
 						</p>
 						<AltitudeChart
 							samples={details.series ?? []}
@@ -401,9 +422,9 @@ async function load(search: string): Promise<void> {
 					</Card>
 
 					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
-						<p class="mb-2 text-sm font-medium">Sun azimuth</p>
+						<p class="mb-2 text-sm font-medium">{m.sunAzimuth()}</p>
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-							Apparent azimuth from first to fourth contact (0–360°)
+							{m.sunAzimuthHint()}
 						</p>
 						<AzimuthChart
 							samples={details.series ?? []}
@@ -416,9 +437,9 @@ async function load(search: string): Promise<void> {
 						class="w-full p-2 max-w-none col-span-2 lg:col-span-4"
 						size="xl"
 					>
-						<p class="mb-2 text-sm font-medium">Obscuration</p>
+						<p class="mb-2 text-sm font-medium">{m.obscurationHeading()}</p>
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-							Sun-area coverage from first to fourth contact
+							{m.obscurationHint()}
 						</p>
 						<ObscurationChart
 							samples={details.series ?? []}
@@ -430,7 +451,7 @@ async function load(search: string): Promise<void> {
 			{:else if !loading && error}
 				<Alert color="red">{error}</Alert>
 			{:else if !loading}
-				<Alert color="blue">No details available for this selection.</Alert>
+				<Alert color="blue">{m.noDetailsAvailable()}</Alert>
 			{:else}
 				<div class="min-h-64" aria-busy="true"></div>
 			{/if}
@@ -442,7 +463,7 @@ async function load(search: string): Promise<void> {
 					aria-live="polite"
 				>
 					<Spinner />
-					<span class="sr-only">Loading details</span>
+					<span class="sr-only">{m.loadingDetailsAria()}</span>
 				</div>
 			{/if}
 		</div>

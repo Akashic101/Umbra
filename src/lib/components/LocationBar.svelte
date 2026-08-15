@@ -8,6 +8,7 @@ import {
 } from "flowbite-svelte";
 import { MapPinOutline, SearchOutline } from "flowbite-svelte-icons";
 import { appState } from "$lib/app-state.svelte";
+import { m } from "$lib/paraglide/messages.js";
 import { formatCoordinates } from "$lib/services/geocoding";
 
 async function onSearch(event: Event): Promise<void> {
@@ -28,14 +29,14 @@ const locationLabel = $derived(
 		<div class="flex gap-2">
 			<Search
 				bind:value={appState.searchQuery}
-				placeholder="Search a place"
+				placeholder={m.searchPlacePlaceholder()}
 				class="w-full"
 				clearable
-				aria-label="Search for a place"
+				aria-label={m.searchPlaceAria()}
 			/>
 			<Button type="submit" color="primary" class="shrink-0">
 				<SearchOutline class="h-4 w-4" />
-				<span class="sr-only">Search</span>
+				<span class="sr-only">{m.searchSubmitAria()}</span>
 			</Button>
 			<Button
 				type="button"
@@ -44,7 +45,7 @@ const locationLabel = $derived(
 				onclick={() => appState.useGps()}
 			>
 				<MapPinOutline class="h-4 w-4" />
-				<span class="sr-only">Use current location</span>
+				<span class="sr-only">{m.useGpsAria()}</span>
 			</Button>
 		</div>
 		{#if appState.searchResults.length}
@@ -72,7 +73,7 @@ const locationLabel = $derived(
 			</Badge>
 		{:else}
 			<p class="truncate text-sm text-gray-500 dark:text-gray-400">
-				Tap the map, search, or use GPS to pick a location.
+				{m.pickLocationHint()}
 			</p>
 		{/if}
 	</div>

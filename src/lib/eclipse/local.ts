@@ -5,7 +5,7 @@ import type {
 	ObserverLocation,
 } from "$lib/types";
 import { getEclipse, toAstronomyLocation } from "./catalog";
-import { toiToIso } from "./time";
+import { toiToIso } from "./toi";
 
 const NOT_VISIBLE = "No solar eclipse visible at this location";
 

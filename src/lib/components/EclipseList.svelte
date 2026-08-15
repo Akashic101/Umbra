@@ -7,7 +7,9 @@ import {
 	Spinner,
 } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
+import { formatEclipseType } from "$lib/eclipse/detail-format";
 import { formatDuration, formatPercent } from "$lib/eclipse/time";
+import { m } from "$lib/paraglide/messages.js";
 
 const PAGE_SIZE = 10;
 
@@ -40,8 +42,11 @@ function onPageChange(next: number) {
 <div class="flex flex-col">
 	<div class="mb-2 flex items-center justify-between gap-2">
 		<p class="text-sm font-medium">
-			{totalCount}
-			eclipses · page {currentPage}/{totalPages}
+			{m.eclipseCountPage({
+				count: totalCount,
+				page: currentPage,
+				totalPages,
+			})}
 		</p>
 		{#if appState.loadingLocal || appState.loadingCatalog}
 			<Spinner size="4" />
@@ -61,21 +66,29 @@ function onPageChange(next: number) {
 						<p class="font-medium">{entry.date}</p>
 						<p class="text-xs text-gray-500 dark:text-gray-400">
 							{#if local?.visible}
-								Coverage {formatPercent(local.obscuration)} ·
-								{formatDuration(local.durationSeconds)}
-								{#if local.localType !== entry.type}
-									· global {entry.type}
+								{#if local.localType === entry.type}
+									{m.listCoverageDuration({
+										coverage: formatPercent(local.obscuration),
+										duration: formatDuration(local.durationSeconds),
+									})}
+								{:else}
+									{m.listCoverageDurationGlobal({
+										coverage: formatPercent(local.obscuration),
+										duration: formatDuration(local.durationSeconds),
+										type: formatEclipseType(entry.type),
+									})}
 								{/if}
 							{:else if appState.location}
-								Not visible here · {entry.type}
+								{m.listNotVisible({ type: formatEclipseType(entry.type) })}
 							{:else}
-								{formatDuration(entry.maxDurationSeconds)}
-								max
+								{m.listMaxDuration({
+									duration: formatDuration(entry.maxDurationSeconds),
+								})}
 							{/if}
 						</p>
 					</div>
 					<Badge color={typeColor[displayType] ?? "blue"}>
-						{displayType}
+						{formatEclipseType(displayType)}
 					</Badge>
 				</div>
 			</ListgroupItem>
@@ -84,14 +97,14 @@ function onPageChange(next: number) {
 	{#if totalCount > 0}
 		<div class="mt-2 flex items-center justify-between gap-2">
 			<p class="shrink-0 text-xs text-gray-500 dark:text-gray-400">
-				Page {currentPage} of {totalPages}
+				{m.pageOf({ page: currentPage, totalPages })}
 			</p>
 			<PaginationNav
 				{currentPage}
 				{totalPages}
 				layout="navigation"
-				previousLabel="Prev"
-				nextLabel="Next"
+				previousLabel={m.paginationPrev()}
+				nextLabel={m.paginationNext()}
 				class="shrink-0"
 				{onPageChange}
 			/>

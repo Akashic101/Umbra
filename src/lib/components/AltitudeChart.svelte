@@ -1,4 +1,6 @@
 <script lang="ts">
+import { formatCentralWord } from "$lib/eclipse/detail-format";
+import { m } from "$lib/paraglide/messages.js";
 import type { ContactTimes, LocalEclipseType } from "$lib/types";
 
 type AltitudePoint = { iso: string; altitudeDeg: number };
@@ -103,12 +105,7 @@ const chart = $derived.by(() => {
 
 	const hasCentral =
 		markers.some((m) => m.key === "c2") || markers.some((m) => m.key === "c3");
-	const centralWord =
-		localType === "annular"
-			? "annularity"
-			: localType === "total"
-				? "totality"
-				: "totality/annularity";
+	const centralWord = formatCentralWord(localType);
 
 	return {
 		points,
@@ -255,9 +252,9 @@ function formatHm(iso: string | null): string {
 		viewBox="0 0 {width} {height}"
 		class="h-auto w-full"
 		role="img"
-		aria-label="Sun altitude from first to fourth contact"
+		aria-label={m.sunAltitudeAria()}
 	>
-		<title>Sun altitude during the eclipse</title>
+		<title>{m.sunAltitudeTitle()}</title>
 		{#if chart.zeroY !== null}
 			<line
 				x1={padL}
@@ -352,11 +349,11 @@ function formatHm(iso: string | null): string {
 	</svg>
 	{#if chart.hasCentral}
 		<p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-			C1/C4 contacts · C2/C3 {chart.centralWord}
+			{m.chartContactLegend({ centralWord: chart.centralWord })}
 		</p>
 	{/if}
 {:else}
 	<p class="text-sm text-gray-500 dark:text-gray-400">
-		No altitude series for this location.
+		{m.noAltitudeSeries()}
 	</p>
 {/if}

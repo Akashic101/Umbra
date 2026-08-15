@@ -2,6 +2,7 @@
 import { Button } from "flowbite-svelte";
 import { StarOutline, StarSolid } from "flowbite-svelte-icons";
 import { appState } from "$lib/app-state.svelte";
+import { m } from "$lib/paraglide/messages.js";
 import type { ObserverLocation } from "$lib/types";
 
 let {
@@ -29,13 +30,13 @@ function toggle(): void {
 	class={className}
 	onclick={toggle}
 	aria-pressed={saved}
-	aria-label={saved ? "Remove from favorites" : "Save to favorites"}
+	aria-label={saved ? m.removeFromFavoritesAria() : m.saveToFavoritesAria()}
 >
 	{#if saved}
 		<StarSolid class="h-4 w-4" />
-		<span>Saved</span>
+		<span>{m.saved()}</span>
 	{:else}
 		<StarOutline class="h-4 w-4" />
-		<span>Save</span>
+		<span>{m.save()}</span>
 	{/if}
 </Button>

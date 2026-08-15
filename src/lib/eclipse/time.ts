@@ -1,13 +1,5 @@
-import type { TimeOfInterest } from "@astronomy-bundle/core";
-
-export function toiToIso(
-	toi: TimeOfInterest | null | undefined,
-): string | null {
-	if (!toi) {
-		return null;
-	}
-	return toi.getDate().toISOString();
-}
+import { m } from "$lib/paraglide/messages.js";
+import { getLocale } from "$lib/paraglide/runtime";
 
 function deviceTimeZone(): string {
 	return typeof Intl === "undefined"
@@ -20,10 +12,10 @@ export function formatInstant(
 	timeZone = deviceTimeZone(),
 ): string {
 	if (!iso) {
-		return "—";
+		return m.emDash();
 	}
 	const date = new Date(iso);
-	const formatter = new Intl.DateTimeFormat(undefined, {
+	const formatter = new Intl.DateTimeFormat(getLocale(), {
 		timeZone,
 		year: "numeric",
 		month: "short",
@@ -42,11 +34,11 @@ export function formatContactTime(
 	options: { includeDate?: boolean; timeZone?: string } = {},
 ): string {
 	if (!iso) {
-		return "—";
+		return m.emDash();
 	}
 	const timeZone = options.timeZone ?? deviceTimeZone();
 	const date = new Date(iso);
-	const formatter = new Intl.DateTimeFormat(undefined, {
+	const formatter = new Intl.DateTimeFormat(getLocale(), {
 		timeZone,
 		...(options.includeDate
 			? { month: "short" as const, day: "numeric" as const }
@@ -72,25 +64,25 @@ export function localDateKey(iso: string, timeZone = deviceTimeZone()): string {
 
 export function formatDuration(seconds: number): string {
 	if (!Number.isFinite(seconds) || seconds <= 0) {
-		return "—";
+		return m.emDash();
 	}
 	const total = Math.round(seconds);
 	const hours = Math.floor(total / 3600);
 	const minutes = Math.floor((total % 3600) / 60);
 	const secs = total % 60;
 	if (hours > 0) {
-		return `${hours}h ${minutes}m ${secs}s`;
+		return m.durationHms({ hours, minutes, seconds: secs });
 	}
 	if (minutes > 0) {
-		return `${minutes}m ${secs}s`;
+		return m.durationMs({ minutes, seconds: secs });
 	}
-	return `${secs}s`;
+	return m.durationS({ seconds: secs });
 }
 
 /** Live countdown: years, days, and HH:MM:SS (no fractional seconds). */
 export function formatCountdown(ms: number): string {
 	if (!Number.isFinite(ms) || ms < 0) {
-		return "—";
+		return m.emDash();
 	}
 	const total = Math.floor(ms / 1000);
 	const years = Math.floor(total / (365 * 24 * 3600));
@@ -103,17 +95,17 @@ export function formatCountdown(ms: number): string {
 	const pad = (n: number) => String(n).padStart(2, "0");
 	const clock = `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 	if (years > 0) {
-		return `${years}y ${days}d ${clock}`;
+		return m.countdownYd({ years, days, clock });
 	}
 	if (days > 0) {
-		return `${days}d ${clock}`;
+		return m.countdownD({ days, clock });
 	}
 	return clock;
 }
 
 export function formatPercent(value: number): string {
 	if (!Number.isFinite(value) || value <= 0) {
-		return "0%";
+		return m.percentZero();
 	}
-	return `${(value * 100).toFixed(1)}%`;
+	return m.percent({ value: (value * 100).toFixed(1) });
 }

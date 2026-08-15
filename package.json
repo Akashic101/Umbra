@@ -13,7 +13,8 @@
 		"lint": "biome check .",
 		"format": "biome check --write .",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test": "npm run test:unit -- --run",
+		"knip": "knip"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.8",
@@ -25,6 +26,7 @@
 		"flowbite": "^4.0.2",
 		"flowbite-svelte": "^1.33.1",
 		"flowbite-svelte-icons": "^3.1.0",
+		"knip": "^6.32.2",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.0",
@@ -35,6 +37,7 @@
 	"dependencies": {
 		"@astronomy-bundle/core": "^9.38.0",
 		"@astronomy-bundle/solar-eclipse": "^9.38.0",
+		"@inlang/paraglide-js": "^2.24.0",
 		"leaflet": "^1.9.4"
 	}
 }

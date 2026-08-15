@@ -44,8 +44,7 @@ export function normalizeObserverDetails(
 		centralDurationSeconds: num(record.centralDurationSeconds),
 		sunriseIso: strOrNull(record.sunriseIso),
 		sunsetIso: strOrNull(record.sunsetIso),
-		lookDirection:
-			typeof record.lookDirection === "string" ? record.lookDirection : "—",
+		lookDirectionCode: strOrNull(record.lookDirectionCode),
 		lookAzimuthDeg: numOrNull(record.lookAzimuthDeg),
 		lookAltitudeDeg: numOrNull(record.lookAltitudeDeg),
 		pathWidthMeters: num(record.pathWidthMeters),
@@ -110,7 +109,6 @@ function normalizeContactDaylight(value: unknown): ContactDaylight[] {
 		}
 		out.push({
 			key: row.key,
-			label: typeof row.label === "string" ? row.label : row.key,
 			phase:
 				row.phase === "day" || row.phase === "night" || row.phase === "unknown"
 					? row.phase

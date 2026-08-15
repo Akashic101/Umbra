@@ -1,6 +1,7 @@
 <script lang="ts">
 import { Button, Card } from "flowbite-svelte";
 import { formatContactTime, formatPercent } from "$lib/eclipse/time";
+import { m } from "$lib/paraglide/messages.js";
 import type {
 	CircumstanceSample,
 	ContactTimes,
@@ -69,15 +70,17 @@ const sample = $derived(
 const contactButtons = $derived(
 	(
 		[
-			{ key: "c1", label: "C1", iso: contacts.c1 },
-			{ key: "c2", label: "C2", iso: contacts.c2 },
-			{ key: "max", label: "Max", iso: contacts.max },
-			{ key: "c3", label: "C3", iso: contacts.c3 },
-			{ key: "c4", label: "C4", iso: contacts.c4 },
+			{ key: "c1", label: m.scrubC1(), iso: contacts.c1 },
+			{ key: "c2", label: m.scrubC2(), iso: contacts.c2 },
+			{ key: "max", label: m.scrubMax(), iso: contacts.max },
+			{ key: "c3", label: m.scrubC3(), iso: contacts.c3 },
+			{ key: "c4", label: m.scrubC4(), iso: contacts.c4 },
 		] as const
 	).flatMap((btn) => {
 		const nearest = indexNearestIso(btn.iso);
-		return nearest === null ? [] : [{ key: btn.key, label: btn.label, nearest }];
+		return nearest === null
+			? []
+			: [{ key: btn.key, label: btn.label, nearest }];
 	}),
 );
 
@@ -99,13 +102,13 @@ function formatHm(iso: string | null): string {
 </script>
 
 <Card class="col-span-2 w-full max-w-none p-2 lg:col-span-2" size="xl">
-	<p class="mb-2 text-sm font-medium">Coverage over time</p>
+	<p class="mb-2 text-sm font-medium">{m.coverageOverTime()}</p>
 	<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-		Scrub from first to fourth contact
+		{m.coverageOverTimeHint()}
 	</p>
 	{#if !sample}
 		<p class="text-sm text-gray-500 dark:text-gray-400">
-			No coverage series for this location.
+			{m.noCoverageSeries()}
 		</p>
 	{:else}
 		<div class="flex flex-col items-center gap-3">
@@ -122,11 +125,13 @@ function formatHm(iso: string | null): string {
 					{formatContactTime(sample.iso)}
 				</p>
 				<p class="text-sm">
-					Coverage {formatPercent(sample.obscuration)} · Magnitude
-					{formatPercent(sample.magnitude)}
+					{m.coverageAndMagnitude({
+						coverage: formatPercent(sample.obscuration),
+						magnitude: formatPercent(sample.magnitude),
+					})}
 				</p>
 				<label class="block">
-					<span class="sr-only">Eclipse time</span>
+					<span class="sr-only">{m.eclipseTimeAria()}</span>
 					<input
 						type="range"
 						class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 dark:bg-gray-700"

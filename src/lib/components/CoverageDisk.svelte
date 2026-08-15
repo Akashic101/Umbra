@@ -1,4 +1,5 @@
 <script lang="ts">
+import { m } from "$lib/paraglide/messages.js";
 import type { LocalEclipseType } from "$lib/types";
 
 let {
@@ -63,15 +64,18 @@ const viewBox = $derived.by(() => {
 	return `${left} ${top} ${frame} ${frame}`;
 });
 
-const label = $derived(
-	localType === "none"
-		? "No eclipse: Moon does not cover the Sun"
-		: localType === "total"
-			? "Total eclipse: Moon covers the Sun"
-			: localType === "annular"
-				? "Annular eclipse: ring of sunlight"
-				: `Partial eclipse: ${(obscuration * 100).toFixed(0)}% of the Sun covered`,
-);
+const label = $derived.by(() => {
+	if (localType === "none") {
+		return m.diskNone();
+	}
+	if (localType === "total") {
+		return m.diskTotal();
+	}
+	if (localType === "annular") {
+		return m.diskAnnular();
+	}
+	return m.diskPartial({ percent: (obscuration * 100).toFixed(0) });
+});
 </script>
 
 <svg

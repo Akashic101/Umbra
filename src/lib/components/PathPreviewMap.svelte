@@ -2,6 +2,7 @@
 import type { CircleMarker, LayerGroup, Map as LeafletMap } from "leaflet";
 import type { Attachment } from "svelte/attachments";
 import { toLeafletRing } from "$lib/map/geo";
+import { m } from "$lib/paraglide/messages.js";
 import type { EclipsePaths, ObserverLocation } from "$lib/types";
 import "leaflet/dist/leaflet.css";
 
@@ -158,5 +159,5 @@ function fitView(): void {
 	{@attach mapAttachment}
 	class="h-64 w-full min-h-56 rounded-md"
 	role="application"
-	aria-label="Eclipse path preview map"
+	aria-label={m.pathPreviewMapAria()}
 ></div>

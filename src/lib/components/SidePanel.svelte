@@ -1,6 +1,7 @@
 <script lang="ts">
 import { Alert, TabItem, Tabs } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
+import { m } from "$lib/paraglide/messages.js";
 import { formatCoordinates } from "$lib/services/geocoding";
 import CircumstancesPanel from "./CircumstancesPanel.svelte";
 import EclipseList from "./EclipseList.svelte";
@@ -11,7 +12,7 @@ const locationLabel = $derived(
 	appState.location
 		? appState.location.label ||
 				formatCoordinates(appState.location.lat, appState.location.lon)
-		: "No location selected",
+		: m.noLocationSelected(),
 );
 
 function onTabChange(value: string | undefined): void {
@@ -49,7 +50,7 @@ function onTabChange(value: string | undefined): void {
 		>
 			<TabItem
 				key="eclipses"
-				title="Eclipses"
+				title={m.tabEclipses()}
 				open={appState.panelTab === "eclipses"}
 			>
 				<div class="flex flex-col gap-3">
@@ -60,18 +61,17 @@ function onTabChange(value: string | undefined): void {
 			</TabItem>
 			<TabItem
 				key="details"
-				title="Details"
+				title={m.tabDetails()}
 				open={appState.panelTab === "details"}
 			>
 				<div class="flex flex-col gap-3">
 					<CircumstancesPanel />
 					<p class="text-xs text-gray-500 dark:text-gray-400">
-						Eclipse calculations use NASA Besselian elements via
-						astronomy-bundle. Map data ©
+						{m.attributionPrefix()}
 						<a class="underline" href="https://www.openstreetmap.org/copyright"
-							>OpenStreetMap</a
+							>{m.attributionOsm()}</a
 						>
-						contributors.
+						{m.attributionSuffix()}
 					</p>
 				</div>
 			</TabItem>

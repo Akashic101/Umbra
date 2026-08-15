@@ -8,6 +8,7 @@ import { page } from "$app/state";
 import { appState } from "$lib/app-state.svelte";
 import EclipseMap from "$lib/components/Map.svelte";
 import SidePanel from "$lib/components/SidePanel.svelte";
+import { m } from "$lib/paraglide/messages.js";
 import {
 	parseQuery,
 	persistence,
@@ -68,7 +69,9 @@ function onMapSelect(lat: number, lon: number): void {
 		<SidePanel />
 	</aside>
 	<div class="absolute bottom-4 right-4 z-[1000] md:hidden">
-		<Button onclick={() => (appState.mobileOpen = true)}>Details</Button>
+		<Button onclick={() => (appState.mobileOpen = true)}>
+			{m.mobileDetailsButton()}
+		</Button>
 	</div>
 	<Drawer
 		bind:open={appState.mobileOpen}
@@ -77,7 +80,7 @@ function onMapSelect(lat: number, lon: number): void {
 	>
 		<div class="flex items-center gap-2 px-3 pt-3">
 			<BarsOutline class="h-5 w-5" />
-			<p class="font-medium">Eclipse details</p>
+			<p class="font-medium">{m.mobileDrawerTitle()}</p>
 		</div>
 		<SidePanel />
 	</Drawer>

@@ -2,12 +2,15 @@
 import { Alert, Button, Card, Progressbar, Spinner } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
 import { serializeDetailsQuery } from "$lib/details-query";
+import { formatLocalTypeTitle } from "$lib/eclipse/detail-format";
 import {
 	formatContactTime,
 	formatDuration,
 	formatPercent,
 	localDateKey,
 } from "$lib/eclipse/time";
+import { m } from "$lib/paraglide/messages.js";
+import { localizeHref } from "$lib/paraglide/runtime";
 import CoverageDisk from "./CoverageDisk.svelte";
 import FavoriteButton from "./FavoriteButton.svelte";
 
@@ -18,7 +21,7 @@ const detailsHref = $derived.by(() => {
 	if (!appState.selectedDate || !appState.location) {
 		return null;
 	}
-	return `/details?${serializeDetailsQuery({
+	const query = serializeDetailsQuery({
 		date: appState.selectedDate,
 		location: {
 			lat: appState.location.lat,
@@ -26,7 +29,8 @@ const detailsHref = $derived.by(() => {
 			height: appState.location.height,
 			label: appState.location.label,
 		},
-	})}`;
+	});
+	return localizeHref(`/details?${query}`);
 });
 
 const contactRows = $derived.by(() => {
@@ -35,16 +39,16 @@ const contactRows = $derived.by(() => {
 		return [];
 	}
 	const rows: { key: string; label: string; iso: string | null }[] = [
-		{ key: "c1", label: "First contact", iso: c.c1 },
+		{ key: "c1", label: m.firstContact(), iso: c.c1 },
 	];
 	if (c.c2) {
-		rows.push({ key: "c2", label: "Second contact", iso: c.c2 });
+		rows.push({ key: "c2", label: m.secondContact(), iso: c.c2 });
 	}
-	rows.push({ key: "max", label: "Greatest", iso: c.max });
+	rows.push({ key: "max", label: m.greatest(), iso: c.max });
 	if (c.c3) {
-		rows.push({ key: "c3", label: "Third contact", iso: c.c3 });
+		rows.push({ key: "c3", label: m.thirdContact(), iso: c.c3 });
 	}
-	rows.push({ key: "c4", label: "Fourth contact", iso: c.c4 });
+	rows.push({ key: "c4", label: m.fourthContact(), iso: c.c4 });
 	const days = new Set(
 		rows
 			.map((row) => row.iso)
@@ -62,7 +66,7 @@ const contactRows = $derived.by(() => {
 <Card class="relative w-full p-2 max-w-none overflow-hidden" size="xl">
 	{#if !appState.selectedDate}
 		<p class="text-sm text-gray-500 dark:text-gray-400">
-			Select an eclipse to see local times.
+			{m.selectEclipseHint()}
 		</p>
 	{:else if appState.circumstances?.visible}
 		<div
@@ -70,9 +74,8 @@ const contactRows = $derived.by(() => {
 			class:opacity-40={showOverlay}
 			aria-busy={showOverlay}
 		>
-			<p class="font-medium capitalize">
-				{appState.circumstances.localType}
-				eclipse
+			<p class="font-medium">
+				{formatLocalTypeTitle(appState.circumstances.localType)}
 			</p>
 			<CoverageDisk
 				obscuration={appState.circumstances.obscuration}
@@ -81,20 +84,21 @@ const contactRows = $derived.by(() => {
 				localType={appState.circumstances.localType}
 			/>
 			<div>
-				<p class="mb-1 text-sm">Coverage (Sun area)</p>
+				<p class="mb-1 text-sm">{m.coverageSunArea()}</p>
 				<Progressbar
 					progress={appState.circumstances.obscuration * 100}
 					labelInside
 					size="h-4"
 				/>
 				<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-					Magnitude {formatPercent(appState.circumstances.magnitude)} of the
-					Sun's diameter
+					{m.magnitudeOfDiameter({
+						percent: formatPercent(appState.circumstances.magnitude),
+					})}
 				</p>
 			</div>
 			<ul
 				class="divide-y divide-gray-200 text-sm dark:divide-gray-700"
-				aria-label="Eclipse contacts"
+				aria-label={m.contactsAria()}
 			>
 				{#each contactRows as row (row.key)}
 					<li
@@ -111,10 +115,16 @@ const contactRows = $derived.by(() => {
 				{/each}
 			</ul>
 			<p class="text-sm">
-				Total length {formatDuration(appState.circumstances.durationSeconds)}
+				{m.totalLength({
+					duration: formatDuration(appState.circumstances.durationSeconds),
+				})}
 				{#if appState.circumstances.centralDurationSeconds}
-					· Central
-					{formatDuration(appState.circumstances.centralDurationSeconds)}
+					·
+					{m.centralDuration({
+						duration: formatDuration(
+							appState.circumstances.centralDurationSeconds,
+						),
+					})}
 				{/if}
 			</p>
 			{#if detailsHref && appState.selectedDate && appState.location}
@@ -124,17 +134,15 @@ const contactRows = $derived.by(() => {
 						location={appState.location}
 						class="w-full"
 					/>
-					<Button href={detailsHref} color="primary" class="w-full"
-						>More info</Button
-					>
+					<Button href={detailsHref} color="primary" class="w-full">
+						{m.moreInfo()}
+					</Button>
 				</div>
 			{/if}
 		</div>
 	{:else if appState.circumstances}
 		<div class:opacity-40={showOverlay} aria-busy={showOverlay}>
-			<Alert color="blue">
-				This eclipse is not visible from the selected location.
-			</Alert>
+			<Alert color="blue">{m.notVisibleAlert()}</Alert>
 			{#if detailsHref && appState.selectedDate && appState.location}
 				<div class="mt-3 flex w-full flex-col gap-2">
 					<FavoriteButton
@@ -142,16 +150,14 @@ const contactRows = $derived.by(() => {
 						location={appState.location}
 						class="w-full"
 					/>
-					<Button href={detailsHref} color="alternative" class="w-full"
-						>More info</Button
-					>
+					<Button href={detailsHref} color="alternative" class="w-full">
+						{m.moreInfo()}
+					</Button>
 				</div>
 			{/if}
 		</div>
 	{:else if !appState.location}
-		<Alert color="yellow"
-			>Pick a location to compute start, end, and coverage.</Alert
-		>
+		<Alert color="yellow">{m.pickLocationAlert()}</Alert>
 	{:else}
 		<div class="min-h-48" aria-busy={showOverlay}></div>
 	{/if}
@@ -163,7 +169,7 @@ const contactRows = $derived.by(() => {
 			aria-live="polite"
 		>
 			<Spinner />
-			<span class="sr-only">Updating eclipse details</span>
+			<span class="sr-only">{m.updatingDetailsAria()}</span>
 		</div>
 	{/if}
 </Card>

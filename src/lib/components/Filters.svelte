@@ -7,6 +7,7 @@ import {
 	Toggle,
 } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
+import { m } from "$lib/paraglide/messages.js";
 import {
 	ALL_ECLIPSE_TYPES,
 	CATALOG_YEAR_MAX,
@@ -16,10 +17,10 @@ import {
 } from "$lib/types";
 
 const labels: Record<EclipseType, string> = {
-	total: "Total",
-	annular: "Annular",
-	hybrid: "Hybrid",
-	partial: "Partial",
+	total: m.typeTotal(),
+	annular: m.typeAnnular(),
+	hybrid: m.typeHybrid(),
+	partial: m.typePartial(),
 };
 
 const today = localIsoDate();
@@ -40,7 +41,7 @@ type YearChip = {
 const yearChips: YearChip[] = [
 	{
 		id: "all",
-		label: "All years",
+		label: m.yearsAll(),
 		from: CATALOG_YEAR_MIN,
 		to: CATALOG_YEAR_MAX,
 		dateFrom: null,
@@ -48,7 +49,7 @@ const yearChips: YearChip[] = [
 	},
 	{
 		id: "upcoming",
-		label: "Upcoming",
+		label: m.yearsUpcoming(),
 		from: Math.min(Math.max(currentYear, CATALOG_YEAR_MIN), CATALOG_YEAR_MAX),
 		to: CATALOG_YEAR_MAX,
 		dateFrom: today,
@@ -56,7 +57,7 @@ const yearChips: YearChip[] = [
 	},
 	{
 		id: "past",
-		label: "Past",
+		label: m.yearsPast(),
 		from: CATALOG_YEAR_MIN,
 		to: Math.min(Math.max(currentYear, CATALOG_YEAR_MIN), CATALOG_YEAR_MAX),
 		dateFrom: null,
@@ -64,7 +65,7 @@ const yearChips: YearChip[] = [
 	},
 	{
 		id: "1900s",
-		label: "1900–1950",
+		label: m.years1900to1950(),
 		from: 1900,
 		to: 1950,
 		dateFrom: null,
@@ -72,7 +73,7 @@ const yearChips: YearChip[] = [
 	},
 	{
 		id: "1950s",
-		label: "1950–2000",
+		label: m.years1950to2000(),
 		from: 1950,
 		to: 2000,
 		dateFrom: null,
@@ -80,7 +81,7 @@ const yearChips: YearChip[] = [
 	},
 	{
 		id: "2000s",
-		label: "2000–2100",
+		label: m.years2000to2100(),
 		from: 2000,
 		to: 2100,
 		dateFrom: null,
@@ -89,30 +90,30 @@ const yearChips: YearChip[] = [
 ];
 
 const totalDurationChips: { label: string; seconds: number }[] = [
-	{ label: "Any", seconds: 0 },
-	{ label: "≥ 1 min", seconds: 60 },
-	{ label: "≥ 5 min", seconds: 5 * 60 },
-	{ label: "≥ 30 min", seconds: 30 * 60 },
-	{ label: "≥ 1 h", seconds: 60 * 60 },
-	{ label: "≥ 2 h", seconds: 2 * 60 * 60 },
+	{ label: m.chipAny(), seconds: 0 },
+	{ label: m.chipGte1Min(), seconds: 60 },
+	{ label: m.chipGte5Min(), seconds: 5 * 60 },
+	{ label: m.chipGte30Min(), seconds: 30 * 60 },
+	{ label: m.chipGte1H(), seconds: 60 * 60 },
+	{ label: m.chipGte2H(), seconds: 2 * 60 * 60 },
 ];
 
 const centralDurationChips: { label: string; seconds: number }[] = [
-	{ label: "Any", seconds: 0 },
-	{ label: "≥ 10 s", seconds: 10 },
-	{ label: "≥ 30 s", seconds: 30 },
-	{ label: "≥ 1 min", seconds: 60 },
-	{ label: "≥ 2 min", seconds: 2 * 60 },
-	{ label: "≥ 5 min", seconds: 5 * 60 },
+	{ label: m.chipAny(), seconds: 0 },
+	{ label: m.chipGte10S(), seconds: 10 },
+	{ label: m.chipGte30S(), seconds: 30 },
+	{ label: m.chipGte1Min(), seconds: 60 },
+	{ label: m.chipGte2Min(), seconds: 2 * 60 },
+	{ label: m.chipGte5Min(), seconds: 5 * 60 },
 ];
 
 const coverageChips: { label: string; obscuration: number }[] = [
-	{ label: "Any", obscuration: 0 },
-	{ label: "≥ 10%", obscuration: 0.1 },
-	{ label: "≥ 25%", obscuration: 0.25 },
-	{ label: "≥ 50%", obscuration: 0.5 },
-	{ label: "≥ 75%", obscuration: 0.75 },
-	{ label: "≥ 90%", obscuration: 0.9 },
+	{ label: m.chipAny(), obscuration: 0 },
+	{ label: m.chipGte10Pct(), obscuration: 0.1 },
+	{ label: m.chipGte25Pct(), obscuration: 0.25 },
+	{ label: m.chipGte50Pct(), obscuration: 0.5 },
+	{ label: m.chipGte75Pct(), obscuration: 0.75 },
+	{ label: m.chipGte90Pct(), obscuration: 0.9 },
 ];
 
 function isYearChipActive(chip: YearChip): boolean {
@@ -149,13 +150,13 @@ function selectMinCoverage(obscuration: number): void {
 <Accordion flush>
 	<AccordionItem open>
 		{#snippet header()}
-			Filters
+			{m.filtersHeading()}
 		{/snippet}
 		<div class="flex flex-col gap-4">
 			<div>
-				<p class="mb-2 text-sm font-medium">Type</p>
+				<p class="mb-2 text-sm font-medium">{m.typeHeading()}</p>
 				<p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-					Catalog type (a global total can still be partial at your location).
+					{m.typeHint()}
 				</p>
 				<ul class="flex flex-col gap-2">
 					{#each ALL_ECLIPSE_TYPES as type (type)}
@@ -177,10 +178,10 @@ function selectMinCoverage(obscuration: number): void {
 					(value) => appState.setFilters({ visibleHere: value })
 				}
 			>
-				Visible at this location
+				{m.visibleHere()}
 			</Toggle>
 			<div>
-				<p class="mb-2 text-sm font-medium">Years</p>
+				<p class="mb-2 text-sm font-medium">{m.yearsHeading()}</p>
 				<div class="flex flex-wrap gap-2">
 					{#each yearChips as chip (chip.id)}
 						{@const active = isYearChipActive(chip)}
@@ -196,7 +197,7 @@ function selectMinCoverage(obscuration: number): void {
 				</div>
 			</div>
 			<div>
-				<p class="mb-2 text-sm font-medium">Min total length</p>
+				<p class="mb-2 text-sm font-medium">{m.minTotalLength()}</p>
 				<div class="flex flex-wrap gap-2">
 					{#each totalDurationChips as chip (chip.seconds)}
 						{@const active =
@@ -213,7 +214,7 @@ function selectMinCoverage(obscuration: number): void {
 				</div>
 			</div>
 			<div>
-				<p class="mb-2 text-sm font-medium">Min central length</p>
+				<p class="mb-2 text-sm font-medium">{m.minCentralLength()}</p>
 				<div class="flex flex-wrap gap-2">
 					{#each centralDurationChips as chip (chip.seconds)}
 						{@const active =
@@ -230,11 +231,11 @@ function selectMinCoverage(obscuration: number): void {
 				</div>
 			</div>
 			<div>
-				<p class="mb-2 text-sm font-medium">Min coverage</p>
+				<p class="mb-2 text-sm font-medium">{m.minCoverage()}</p>
 				<p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-					Sun area covered at the selected location.
+					{m.minCoverageHint()}
 					{#if !appState.location}
-						Pick a location to use this filter.
+						{m.minCoverageNeedLocation()}
 					{/if}
 				</p>
 				<div class="flex flex-wrap gap-2">

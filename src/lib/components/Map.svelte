@@ -2,6 +2,7 @@
 import type { CircleMarker, LayerGroup, Map as LeafletMap } from "leaflet";
 import type { Attachment } from "svelte/attachments";
 import { toLeafletRing } from "$lib/map/geo";
+import { m } from "$lib/paraglide/messages.js";
 import type { EclipsePaths, ObserverLocation } from "$lib/types";
 import "leaflet/dist/leaflet.css";
 
@@ -136,5 +137,5 @@ function syncPaths(): void {
 	{@attach mapAttachment}
 	class="h-full w-full min-h-[50dvh]"
 	role="application"
-	aria-label="Map for choosing an observing location"
+	aria-label={m.mapAria()}
 ></div>

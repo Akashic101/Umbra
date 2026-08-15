@@ -1,3 +1,4 @@
+import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { favoriteId, favoritesService } from "$lib/services/favorites";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
@@ -64,7 +65,7 @@ export class AppState {
 			await this.refreshForLocation();
 		} catch (error) {
 			this.error =
-				error instanceof Error ? error.message : "Failed to load eclipses.";
+				error instanceof Error ? error.message : m.errorFailedLoadEclipses();
 		} finally {
 			this.loadingCatalog = false;
 		}
@@ -111,8 +112,7 @@ export class AppState {
 				true,
 			);
 		} catch (error) {
-			this.error =
-				error instanceof Error ? error.message : "Unable to get GPS position.";
+			this.error = error instanceof Error ? error.message : m.errorUnableGps();
 		}
 	}
 
@@ -121,11 +121,11 @@ export class AppState {
 		try {
 			this.searchResults = await geocoding.search(this.searchQuery);
 			if (!this.searchResults.length) {
-				this.error = "No places found.";
+				this.error = m.errorNoPlacesFound();
 			}
 		} catch (error) {
 			this.error =
-				error instanceof Error ? error.message : "Place search failed.";
+				error instanceof Error ? error.message : m.errorPlaceSearchFailed();
 		}
 	}
 
@@ -200,7 +200,7 @@ export class AppState {
 			this.error =
 				error instanceof Error
 					? error.message
-					: "Failed to compute local circumstances.";
+					: m.errorFailedLocalCircumstances();
 		} finally {
 			this.loadingLocal = false;
 		}
@@ -224,9 +224,7 @@ export class AppState {
 			this.circumstances = circumstances;
 		} catch (error) {
 			this.error =
-				error instanceof Error
-					? error.message
-					: "Failed to load eclipse details.";
+				error instanceof Error ? error.message : m.errorFailedLoadDetails();
 		} finally {
 			this.loadingDetail = false;
 		}

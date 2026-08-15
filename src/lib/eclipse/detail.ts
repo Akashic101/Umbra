@@ -12,8 +12,7 @@ import type {
 	PathStatus,
 } from "$lib/types";
 import { getEclipse, toAstronomyLocation } from "./catalog";
-import { formatLookDirectionLabel } from "./detail-format";
-import { toiToIso } from "./time";
+import { toiToIso } from "./toi";
 
 const NOT_VISIBLE = "No solar eclipse visible at this location";
 const SAMPLE_COUNT = 32;
@@ -55,7 +54,7 @@ export function getObserverEclipseDetails(
 
 		let lookAzimuth: number | null = null;
 		let lookAltitude: number | null = null;
-		let lookDirection = "—";
+		let lookDirectionCode: string | null = null;
 		const series: CircumstanceSample[] = [];
 
 		if (contactsRaw?.max) {
@@ -64,10 +63,7 @@ export function getObserverEclipseDetails(
 				.getApparentTopocentricHorizontalCoordinates();
 			lookAzimuth = atMax.azimuth;
 			lookAltitude = atMax.altitude;
-			lookDirection = formatLookDirectionLabel(
-				azimuth2direction(lookAzimuth),
-				lookAltitude,
-			);
+			lookDirectionCode = azimuth2direction(lookAzimuth);
 		}
 
 		if (contactsRaw?.c1 && contactsRaw?.c4) {
@@ -123,17 +119,12 @@ export function getObserverEclipseDetails(
 			centralDurationSeconds,
 			sunriseIso,
 			sunsetIso,
-			lookDirection,
+			lookDirectionCode,
 			lookAzimuthDeg: lookAzimuth,
 			lookAltitudeDeg: lookAltitude,
 			pathWidthMeters,
 			series,
-			contactDaylight: buildContactDaylight(
-				contacts,
-				type,
-				sunriseIso,
-				sunsetIso,
-			),
+			contactDaylight: buildContactDaylight(contacts, sunriseIso, sunsetIso),
 			global,
 			contacts,
 		};
@@ -165,7 +156,6 @@ function buildGlobalFacts(eclipse: SolarEclipse): GlobalEclipseFacts {
 
 function buildContactDaylight(
 	contacts: ContactTimes,
-	localType: LocalEclipseType,
 	sunriseIso: string | null,
 	sunsetIso: string | null,
 ): ContactDaylight[] {
@@ -183,41 +173,10 @@ function buildContactDaylight(
 		}
 		rows.push({
 			key: def.key,
-			label: contactLabel(def.key, localType),
 			phase: daylightPhaseAt(def.iso, sunriseIso, sunsetIso),
 		});
 	}
 	return rows;
-}
-
-function contactLabel(
-	key: ContactDaylight["key"],
-	localType: LocalEclipseType,
-): string {
-	const c2Label =
-		localType === "total"
-			? "Totality begins"
-			: localType === "annular"
-				? "Annularity begins"
-				: "Second contact";
-	const c3Label =
-		localType === "total"
-			? "Totality ends"
-			: localType === "annular"
-				? "Annularity ends"
-				: "Third contact";
-	switch (key) {
-		case "c1":
-			return "First contact";
-		case "c2":
-			return c2Label;
-		case "max":
-			return "Greatest eclipse";
-		case "c3":
-			return c3Label;
-		case "c4":
-			return "Fourth contact";
-	}
 }
 
 /** Day if sunrise ≤ t ≤ sunset; overnight when sunset < sunrise. */
@@ -279,7 +238,7 @@ function emptyDetails(
 		centralDurationSeconds: 0,
 		sunriseIso: null,
 		sunsetIso: null,
-		lookDirection: "—",
+		lookDirectionCode: null,
 		lookAzimuthDeg: null,
 		lookAltitudeDeg: null,
 		pathWidthMeters: 0,
