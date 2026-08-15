@@ -8,6 +8,7 @@ import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
 import CoverageDisk from "$lib/components/CoverageDisk.svelte";
 import CoverageScrubber from "$lib/components/CoverageScrubber.svelte";
 import FavoriteButton from "$lib/components/FavoriteButton.svelte";
+import NowModeCard from "$lib/components/NowModeCard.svelte";
 import ObscurationChart from "$lib/components/ObscurationChart.svelte";
 import PathPreviewMap from "$lib/components/PathPreviewMap.svelte";
 import StagesCard from "$lib/components/StagesCard.svelte";
@@ -143,6 +144,14 @@ async function load(search: string): Promise<void> {
 					class:opacity-40={loading}
 					aria-busy={loading}
 				>
+					{#if details.visible}
+						<NowModeCard
+							contacts={details.contacts}
+							localType={details.localType}
+							series={details.series ?? []}
+						/>
+					{/if}
+
 					<Card class="w-full p-2 max-w-none" size="xl">
 						<p class="mb-2 text-sm font-medium">{m.observerHeading()}</p>
 						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">

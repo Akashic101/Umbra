@@ -1,5 +1,6 @@
 <script lang="ts">
 import { Button, Card } from "flowbite-svelte";
+import { getEclipseNowState, seriesIndexAtMs } from "$lib/eclipse/now-mode";
 import { formatContactTime, formatPercent } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
 import type {
@@ -19,10 +20,18 @@ let {
 	contacts: ContactTimes;
 } = $props();
 
+let nowMs = $state(Date.now());
+let followLive = $state(true);
+
 const maxIndex = $derived(Math.max(0, series.length - 1));
 
 const seriesId = $derived(
 	`${series.length}:${series[0]?.iso ?? ""}:${contacts.max ?? ""}`,
+);
+
+const liveState = $derived(getEclipseNowState(contacts, nowMs));
+const liveIndex = $derived(
+	liveState?.isLive ? seriesIndexAtMs(series, nowMs) : null,
 );
 
 function indexNearestIso(iso: string | null): number | null {
@@ -59,9 +68,14 @@ const defaultIndex = $derived.by(() => {
 /** Scrub position scoped to the current series; cleared when series identity changes. */
 let scrubbed = $state<{ seriesId: string; index: number } | null>(null);
 
-const index = $derived(
-	scrubbed && scrubbed.seriesId === seriesId ? scrubbed.index : defaultIndex,
-);
+const index = $derived.by(() => {
+	if (liveState?.isLive && followLive && liveIndex !== null) {
+		return Math.min(maxIndex, Math.max(0, liveIndex));
+	}
+	return scrubbed && scrubbed.seriesId === seriesId
+		? scrubbed.index
+		: defaultIndex;
+});
 
 const sample = $derived(
 	series.length === 0 ? null : series[Math.min(index, maxIndex)],
@@ -86,7 +100,13 @@ const contactButtons = $derived(
 
 function setIndex(value: number): void {
 	const next = Math.min(maxIndex, Math.max(0, Math.round(Number(value))));
+	followLive = false;
 	scrubbed = { seriesId, index: next };
+}
+
+function resumeLive(): void {
+	followLive = true;
+	scrubbed = null;
 }
 
 function formatHm(iso: string | null): string {
@@ -99,6 +119,15 @@ function formatHm(iso: string | null): string {
 		hour12: false,
 	}).format(new Date(iso));
 }
+
+$effect(() => {
+	nowMs = Date.now();
+	const id = setInterval(() => {
+		nowMs = Date.now();
+	}, 1000);
+
+	return () => clearInterval(id);
+});
 </script>
 
 <Card class="col-span-2 w-full max-w-none p-2 lg:col-span-2" size="xl">
@@ -143,7 +172,7 @@ function formatHm(iso: string | null): string {
 						disabled={series.length < 2}
 					>
 				</label>
-				{#if contactButtons.length > 0}
+				{#if contactButtons.length > 0 || liveState?.isLive}
 					<div class="flex flex-wrap gap-1.5">
 						{#each contactButtons as btn (btn.key)}
 							<Button
@@ -154,6 +183,17 @@ function formatHm(iso: string | null): string {
 								{btn.label}
 							</Button>
 						{/each}
+						{#if liveState?.isLive}
+							{#if followLive}
+								<Button size="xs" color="alternative" disabled>
+									{m.nowFollowingLive()}
+								</Button>
+							{:else}
+								<Button size="xs" color="primary" onclick={resumeLive}>
+									{m.nowFollowLive()}
+								</Button>
+							{/if}
+						{/if}
 					</div>
 				{/if}
 				<div

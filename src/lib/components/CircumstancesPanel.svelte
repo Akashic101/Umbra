@@ -3,8 +3,10 @@ import { Alert, Button, Card, Progressbar, Spinner } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
 import { serializeDetailsQuery } from "$lib/details-query";
 import { formatLocalTypeTitle } from "$lib/eclipse/detail-format";
+import { getEclipseNowState } from "$lib/eclipse/now-mode";
 import {
 	formatContactTime,
+	formatCountdown,
 	formatDuration,
 	formatPercent,
 	localDateKey,
@@ -14,8 +16,14 @@ import { localizeHref } from "$lib/paraglide/runtime";
 import CoverageDisk from "./CoverageDisk.svelte";
 import FavoriteButton from "./FavoriteButton.svelte";
 
+let nowMs = $state(Date.now());
+
 const contacts = $derived(appState.circumstances?.contacts);
 const showOverlay = $derived(appState.loadingDetail || appState.loadingLocal);
+
+const liveState = $derived(
+	contacts ? getEclipseNowState(contacts, nowMs) : null,
+);
 
 const detailsHref = $derived.by(() => {
 	if (!appState.selectedDate || !appState.location) {
@@ -61,6 +69,15 @@ const contactRows = $derived.by(() => {
 		time: formatContactTime(row.iso, { includeDate }),
 	}));
 });
+
+$effect(() => {
+	nowMs = Date.now();
+	const id = setInterval(() => {
+		nowMs = Date.now();
+	}, 1000);
+
+	return () => clearInterval(id);
+});
 </script>
 
 <Card class="relative w-full p-2 max-w-none overflow-hidden" size="xl">
@@ -74,6 +91,26 @@ const contactRows = $derived.by(() => {
 			class:opacity-40={showOverlay}
 			aria-busy={showOverlay}
 		>
+			{#if liveState?.isLive}
+				<Alert color="green" class="py-2 text-sm" aria-live="polite">
+					<p class="font-medium">{m.nowHomeLive()}</p>
+					{#if liveState.remainingToMaxMs != null}
+						<p class="mt-0.5 tabular-nums">
+							{m.nowHomeUntilMax({
+								countdown: formatCountdown(liveState.remainingToMaxMs),
+							})}
+						</p>
+					{/if}
+					{#if detailsHref}
+						<a
+							href={detailsHref}
+							class="mt-1 inline-block font-medium underline underline-offset-2"
+						>
+							{m.moreInfo()}
+						</a>
+					{/if}
+				</Alert>
+			{/if}
 			<p class="font-medium">
 				{formatLocalTypeTitle(appState.circumstances.localType)}
 			</p>

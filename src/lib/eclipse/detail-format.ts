@@ -6,6 +6,7 @@ import type {
 	LocalEclipseType,
 	PathStatus,
 } from "$lib/types";
+import type { EclipseNowPhase } from "./now-mode";
 
 export function formatPathStatus(status: PathStatus): string {
 	switch (status) {
@@ -142,6 +143,30 @@ export function formatStageLabel(
 			return m.stageC3({ label: formatContactLabel("c3", localType) });
 		case "c4":
 			return m.stageC4();
+	}
+}
+
+export function formatNowPhase(
+	phase: EclipseNowPhase,
+	localType: LocalEclipseType,
+): string {
+	switch (phase) {
+		case "upcoming":
+			return m.nowPhaseUpcoming();
+		case "partial_ingress":
+			return m.nowPhasePartialIngress();
+		case "central":
+			if (localType === "total") {
+				return m.nowPhaseCentralTotality();
+			}
+			if (localType === "annular") {
+				return m.nowPhaseCentralAnnularity();
+			}
+			return m.nowPhaseCentral();
+		case "partial_egress":
+			return m.nowPhasePartialEgress();
+		case "ended":
+			return m.nowPhaseEnded();
 	}
 }
 
