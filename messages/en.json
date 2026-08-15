@@ -18,7 +18,7 @@
 	"useGpsAria": "Use current location",
 	"pickLocationHint": "Tap the map, search, or use GPS to pick a location.",
 	"mapAria": "Map for choosing an observing location",
-	"attributionPrefix": "Eclipse calculations use NASA Besselian elements via astronomy-bundle. Map data ©",
+	"attributionPrefix": "Eclipse calculations use NASA Besselian elements via astronomy-bundle. Elevation via Open-Meteo (Copernicus DEM). Map data ©",
 	"attributionOsm": "OpenStreetMap",
 	"attributionSuffix": "contributors.",
 	"eclipseCountPage": "{count} eclipses · page {page}/{totalPages}",

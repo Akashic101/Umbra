@@ -1,5 +1,6 @@
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
+import { elevation } from "$lib/services/elevation";
 import { favoriteId, favoritesService } from "$lib/services/favorites";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
 import { geolocation } from "$lib/services/geolocation";
@@ -62,6 +63,7 @@ export class AppState {
 			if (!this.selectedDate && this.filteredCatalog.length) {
 				this.selectedDate = this.defaultSelectedDate();
 			}
+			await this.ensureTerrainElevation();
 			await this.refreshForLocation();
 		} catch (error) {
 			this.error =
@@ -71,15 +73,37 @@ export class AppState {
 		}
 	}
 
+	/** Sync observer height from terrain DEM (Open-Meteo / Copernicus GLO-90). */
+	private async ensureTerrainElevation(): Promise<void> {
+		const loc = this.location;
+		if (!loc) {
+			return;
+		}
+		const meters = await elevation.getMeters(loc.lat, loc.lon);
+		if (meters === null || !this.location) {
+			return;
+		}
+		if (this.location.height === meters) {
+			return;
+		}
+		this.location = { ...this.location, height: meters };
+		this.persist();
+	}
+
 	async setLocation(
 		location: ObserverLocation,
 		reverseLabel = false,
 	): Promise<void> {
-		this.location = location;
-		if (reverseLabel && !location.label) {
+		const meters = await elevation.getMeters(location.lat, location.lon);
+		const next: ObserverLocation = {
+			...location,
+			height: meters ?? location.height ?? 0,
+		};
+		this.location = next;
+		if (reverseLabel && !next.label) {
 			try {
-				const place = await geocoding.reverse(location.lat, location.lon);
-				if (place && this.location?.lat === location.lat) {
+				const place = await geocoding.reverse(next.lat, next.lon);
+				if (place && this.location?.lat === next.lat) {
 					this.location = {
 						...this.location,
 						label: place.label,
@@ -89,7 +113,7 @@ export class AppState {
 				if (this.location) {
 					this.location = {
 						...this.location,
-						label: formatCoordinates(location.lat, location.lon),
+						label: formatCoordinates(next.lat, next.lon),
 					};
 				}
 			}

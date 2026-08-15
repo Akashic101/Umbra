@@ -47,7 +47,7 @@ function onMapSelect(lat: number, lon: number): void {
 		{
 			lat,
 			lon,
-			height: appState.location?.height ?? 0,
+			height: 0,
 			label: "",
 		},
 		true,

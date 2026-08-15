@@ -18,7 +18,7 @@
 	"useGpsAria": "Aktuellen Standort verwenden",
 	"pickLocationHint": "Tippe auf die Karte, suche oder nutze GPS, um einen Ort zu wählen.",
 	"mapAria": "Karte zur Auswahl des Beobachtungsorts",
-	"attributionPrefix": "Finsternisberechnungen nutzen NASA-Bessel-Elemente über astronomy-bundle. Kartendaten ©",
+	"attributionPrefix": "Finsternisberechnungen nutzen NASA-Bessel-Elemente über astronomy-bundle. Höhenangaben über Open-Meteo (Copernicus-DEM). Kartendaten ©",
 	"attributionOsm": "OpenStreetMap",
 	"attributionSuffix": "Mitwirkende.",
 	"eclipseCountPage": "{count} Finsternisse · Seite {page}/{totalPages}",
