@@ -4,6 +4,7 @@ import { untrack } from "svelte";
 import { page } from "$app/state";
 import AltitudeChart from "$lib/components/AltitudeChart.svelte";
 import AzimuthChart from "$lib/components/AzimuthChart.svelte";
+import CompareLocationsCard from "$lib/components/CompareLocationsCard.svelte";
 import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
 import CoverageDisk from "$lib/components/CoverageDisk.svelte";
 import CoverageScrubber from "$lib/components/CoverageScrubber.svelte";
@@ -396,6 +397,8 @@ async function load(search: string): Promise<void> {
 							</p>
 						{/if}
 					</Card>
+
+					<CompareLocationsCard date={details.date} primary={details} />
 
 					<StagesCard
 						contacts={details.contacts}
