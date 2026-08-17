@@ -14,7 +14,8 @@
 			"!build",
 			"!package-lock.json",
 			"!src/lib/eclipse/lunar-catalog.json",
-			"!scripts/data"
+			"!scripts/data",
+			"!src-tauri"
 		]
 	},
 	"formatter": {

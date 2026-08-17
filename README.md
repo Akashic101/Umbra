@@ -1,42 +1,40 @@
-# sv
+# Umbra
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Local solar and lunar eclipse circumstances. The product is the **native app** (Tauri). The SvelteKit static build is the UI that Tauri loads; it can still be hosted as a share-target for https links.
 
-## Creating a project
+## Native app
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
+Requires [Rust](https://rustup.rs/) (1.77.2+) and the platform WebView (macOS/WebKit, Windows WebView2, Linux WebKitGTK).
 
 ```sh
-# recreate this project
-npx sv@0.17.0 create --template minimal --types ts --add vitest="usages:unit" tailwindcss="plugins:none" sveltekit-adapter="adapter:static" --no-download-check --install npm .
+npm install
+npm run tauri:dev
 ```
 
-## Developing
+On macOS, GPS uses the WebView (`navigator.geolocation`). During `tauri:dev`, grant Location to the **terminal** that launched the command (not only the Umbra window). Packaged builds prompt for the app itself.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Production desktop installers:
+
+```sh
+npm run tauri:build
+```
+
+Deep links use the `umbra:` scheme, for example `umbra:/details?date=2026-08-12&lat=48.1&lon=11.6`.
+
+iOS and Android targets share the same `src-tauri` crate. After installing Xcode / Android Studio:
+
+```sh
+npx tauri ios init
+npx tauri android init
+npx tauri ios dev
+npx tauri android dev
+```
+
+## Website (share-target)
+
+The static SPA is still built with `npm run build` (`adapter-static`, fallback `200.html`). It is not a PWA: there is no install manifest or service worker. Prefer the native app for day-to-day use.
 
 ```sh
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
 npm run build
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

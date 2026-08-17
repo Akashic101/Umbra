@@ -1,11 +1,12 @@
 <script lang="ts">
-import { Alert, TabItem, Tabs } from "flowbite-svelte";
+import { TabItem, Tabs } from "flowbite-svelte";
 import { appState } from "$lib/app-state.svelte";
 import { m } from "$lib/paraglide/messages.js";
 import { formatCoordinates } from "$lib/services/geocoding";
 import CircumstancesPanel from "./CircumstancesPanel.svelte";
 import EclipseList from "./EclipseList.svelte";
 import Filters from "./Filters.svelte";
+import GpsErrorAlert from "./GpsErrorAlert.svelte";
 import LocationBar from "./LocationBar.svelte";
 
 const locationLabel = $derived(
@@ -33,7 +34,7 @@ function onTabChange(value: string | undefined): void {
 			{locationLabel}
 		</p>
 		{#if appState.error}
-			<Alert color="red" class="py-2 text-sm">{appState.error}</Alert>
+			<GpsErrorAlert error={appState.error} />
 		{/if}
 	</div>
 

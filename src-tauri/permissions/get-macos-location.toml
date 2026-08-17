@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-get-macos-location"
+description = "Read the current location via CoreLocation on macOS"
+commands.allow = ["get_macos_location"]

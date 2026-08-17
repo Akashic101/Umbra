@@ -1,0 +1,29 @@
+{
+	"$schema": "../gen/schemas/mobile-schema.json",
+	"identifier": "mobile-capability",
+	"description": "iOS and Android capability for the main window",
+	"windows": ["main"],
+	"platforms": ["iOS", "android"],
+	"permissions": [
+		"core:default",
+		"core:event:default",
+		"allow-open-location-settings",
+		"opener:default",
+		{
+			"identifier": "opener:allow-open-url",
+			"allow": [{ "url": "app-settings:*" }]
+		},
+		"deep-link:default",
+		"geolocation:allow-check-permissions",
+		"geolocation:allow-request-permissions",
+		"geolocation:allow-get-current-position",
+		{
+			"identifier": "http:default",
+			"allow": [
+				{ "url": "https://api.open-meteo.com/**" },
+				{ "url": "https://archive-api.open-meteo.com/**" },
+				{ "url": "https://nominatim.openstreetmap.org/**" }
+			]
+		}
+	]
+}

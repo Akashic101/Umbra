@@ -1,9 +1,10 @@
+import { locationSettingsUrl, openLocationSettings } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { favoriteId, favoritesService } from "$lib/services/favorites";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
-import { geolocation } from "$lib/services/geolocation";
+import { GeolocationError, geolocation } from "$lib/services/geolocation";
 import { persistence } from "$lib/services/persistence";
 import {
 	type CatalogEntry,
@@ -35,6 +36,7 @@ export class AppState {
 	searchQuery = $state("");
 	searchResults = $state<Awaited<ReturnType<typeof geocoding.search>>>([]);
 	error = $state<string | null>(null);
+	locationPermissionDenied = $state(false);
 	mobileOpen = $state(false);
 	ready = $state(false);
 	/** Sidebar tab: find/filter eclipses vs local circumstances. */
@@ -124,6 +126,7 @@ export class AppState {
 
 	async useGps(): Promise<void> {
 		this.error = null;
+		this.locationPermissionDenied = false;
 		try {
 			const position = await geolocation.getCurrentPosition();
 			await this.setLocation(
@@ -136,12 +139,23 @@ export class AppState {
 				true,
 			);
 		} catch (error) {
-			this.error = error instanceof Error ? error.message : m.errorUnableGps();
+			const denied = error instanceof GeolocationError && error.code === 1;
+			this.locationPermissionDenied = true;
+			this.error = denied
+				? m.errorGpsPermissionDenied()
+				: error instanceof Error
+					? error.message
+					: m.errorUnableGps();
+			const unavailable = error instanceof GeolocationError && error.code === 2;
+			if ((denied || unavailable) && locationSettingsUrl()) {
+				void openLocationSettings();
+			}
 		}
 	}
 
 	async searchPlaces(): Promise<void> {
 		this.error = null;
+		this.locationPermissionDenied = false;
 		try {
 			this.searchResults = await geocoding.search(this.searchQuery);
 			if (!this.searchResults.length) {

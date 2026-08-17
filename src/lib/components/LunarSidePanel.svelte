@@ -4,6 +4,7 @@ import { appState } from "$lib/app-state.svelte";
 import { lunarState } from "$lib/lunar-state.svelte";
 import { m } from "$lib/paraglide/messages.js";
 import { formatCoordinates } from "$lib/services/geocoding";
+import GpsErrorAlert from "./GpsErrorAlert.svelte";
 import LocationBar from "./LocationBar.svelte";
 import LunarCircumstancesPanel from "./LunarCircumstancesPanel.svelte";
 import LunarEclipseList from "./LunarEclipseList.svelte";
@@ -35,6 +36,8 @@ function onTabChange(value: string | undefined): void {
 		</p>
 		{#if lunarState.error}
 			<Alert color="red" class="py-2 text-sm">{lunarState.error}</Alert>
+		{:else if appState.error}
+			<GpsErrorAlert error={appState.error} />
 		{/if}
 	</div>
 

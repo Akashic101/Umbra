@@ -2,6 +2,7 @@
 import { Button } from "flowbite-svelte";
 import { LinkOutline } from "flowbite-svelte-icons";
 import { page } from "$app/state";
+import { toShareHref } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
 
 let {
@@ -16,11 +17,10 @@ let copied = $state(false);
 let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function copyLink(): Promise<void> {
-	const href = page.url.href;
+	const href = toShareHref(page.url);
 	try {
 		await navigator.clipboard.writeText(href);
 	} catch {
-		// Fallback for older browsers / insecure contexts
 		const input = document.createElement("input");
 		input.value = href;
 		document.body.appendChild(input);

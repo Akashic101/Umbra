@@ -15,7 +15,10 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run",
 		"knip": "knip",
-		"import:lunar": "node --experimental-strip-types scripts/import-lunar-catalog.ts"
+		"import:lunar": "node --experimental-strip-types scripts/import-lunar-catalog.ts",
+		"tauri": "tauri",
+		"tauri:dev": "tauri dev",
+		"tauri:build": "tauri build"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.8",
@@ -23,6 +26,8 @@
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
+		"@tauri-apps/api": "^2.11.1",
+		"@tauri-apps/cli": "^2.11.4",
 		"@types/leaflet": "^1.9.22",
 		"flowbite": "^4.0.2",
 		"flowbite-svelte": "^1.33.1",
@@ -39,6 +44,10 @@
 		"@astronomy-bundle/core": "^9.38.0",
 		"@astronomy-bundle/solar-eclipse": "^9.38.0",
 		"@inlang/paraglide-js": "^2.24.0",
+		"@tauri-apps/plugin-deep-link": "^2.4.9",
+		"@tauri-apps/plugin-geolocation": "^2.3.2",
+		"@tauri-apps/plugin-http": "^2.5.9",
+		"@tauri-apps/plugin-opener": "^2.5.4",
 		"astronomy-engine": "^2.1.19",
 		"leaflet": "^1.9.4"
 	}

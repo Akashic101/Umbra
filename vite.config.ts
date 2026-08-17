@@ -5,13 +5,14 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+	envPrefix: ["VITE_", "TAURI_ENV_", "TAURI_"],
 	plugins: [
 		tailwindcss(),
 		paraglideVitePlugin({
 			project: "./project.inlang",
 			outdir: "./src/lib/paraglide",
 			emitTsDeclarations: true,
-			strategy: ["cookie", "preferredLanguage", "baseLocale"],
+			strategy: ["localStorage", "cookie", "preferredLanguage", "baseLocale"],
 		}),
 		sveltekit({
 			compilerOptions: {
@@ -26,8 +27,17 @@ export default defineConfig({
 				fallback: "200.html",
 				strict: true,
 			}),
+			serviceWorker: {
+				register: false,
+			},
 		}),
 	],
+	server: {
+		strictPort: true,
+		watch: {
+			ignored: ["**/src-tauri/**"],
+		},
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

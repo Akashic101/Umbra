@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-open-location-settings"
+description = "Open the OS location privacy settings pane"
+commands.allow = ["open_location_settings"]

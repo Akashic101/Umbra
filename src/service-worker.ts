@@ -1,3 +1,5 @@
+/// PWA cache worker. Not registered: native Tauri is the product
+/// (`kit.serviceWorker.register: false` in vite.config.ts).
 /// <reference types="@sveltejs/kit" />
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext" />

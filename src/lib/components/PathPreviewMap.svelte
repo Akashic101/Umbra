@@ -32,6 +32,7 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 			attributionControl: true,
 			dragging: true,
 			scrollWheelZoom: false,
+			tapTolerance: 15,
 		}).setView([20, 0], 2);
 		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 			maxZoom: 19,

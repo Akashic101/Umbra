@@ -6,8 +6,13 @@ import {
 	ListgroupItem,
 	Search,
 } from "flowbite-svelte";
-import { MapPinOutline, SearchOutline } from "flowbite-svelte-icons";
+import {
+	CogOutline,
+	MapPinOutline,
+	SearchOutline,
+} from "flowbite-svelte-icons";
 import { appState } from "$lib/app-state.svelte";
+import { locationSettingsUrl, openLocationSettings } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
 import { formatCoordinates } from "$lib/services/geocoding";
 
@@ -22,6 +27,8 @@ const locationLabel = $derived(
 				formatCoordinates(appState.location.lat, appState.location.lon)
 		: "",
 );
+
+const canOpenSettings = locationSettingsUrl() !== null;
 </script>
 
 <form class="flex flex-col gap-2" onsubmit={onSearch}>
@@ -47,6 +54,18 @@ const locationLabel = $derived(
 				<MapPinOutline class="h-4 w-4" />
 				<span class="sr-only">{m.useGpsAria()}</span>
 			</Button>
+			{#if canOpenSettings}
+				<Button
+					type="button"
+					color="alternative"
+					class="shrink-0"
+					aria-label={m.openLocationSettingsAria()}
+					onclick={() => void openLocationSettings()}
+				>
+					<CogOutline class="h-4 w-4" />
+					<span class="sr-only">{m.openLocationSettings()}</span>
+				</Button>
+			{/if}
 		</div>
 		{#if appState.searchResults.length}
 			<Listgroup

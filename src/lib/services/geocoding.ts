@@ -1,3 +1,4 @@
+import { isTauri, UMBRA_USER_AGENT } from "$lib/env/tauri";
 import type { Place } from "$lib/types";
 import { type FetchFn, getJson } from "./http";
 
@@ -111,4 +112,20 @@ export function formatCoordinates(lat: number, lon: number): string {
 	return `${Math.abs(lat).toFixed(4)}° ${ns}, ${Math.abs(lon).toFixed(4)}° ${ew}`;
 }
 
-export const geocoding = createGeocodingService();
+async function nominatimFetch(
+	input: RequestInfo | URL,
+	init?: RequestInit,
+): Promise<Response> {
+	const headers = new Headers(init?.headers);
+	if (!headers.has("Accept")) {
+		headers.set("Accept", "application/json");
+	}
+	if (isTauri()) {
+		headers.set("User-Agent", UMBRA_USER_AGENT);
+		const { fetch } = await import("@tauri-apps/plugin-http");
+		return fetch(input, { ...init, headers });
+	}
+	return globalThis.fetch(input, { ...init, headers });
+}
+
+export const geocoding = createGeocodingService({ fetch: nominatimFetch });
