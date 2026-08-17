@@ -17,7 +17,10 @@ let { children } = $props();
 
 const path = $derived(deLocalizeUrl(page.url).pathname);
 const isLunar = $derived(path === "/lunar" || path.startsWith("/lunar/"));
-const isSolar = $derived(!isLunar);
+const isDictionary = $derived(
+	path === "/dictionary" || path.startsWith("/dictionary/"),
+);
+const isSolar = $derived(path === "/" || path.startsWith("/details"));
 
 // The static SPA fallback is prerendered with the base locale, so localized
 // routes served from it need their document language corrected at runtime.
@@ -54,6 +57,13 @@ $effect(() => {
 				class:font-semibold={isLunar}
 			>
 				{m.navLunar()}
+			</a>
+			<a
+				href={localizeHref("/dictionary")}
+				class="text-gray-700 hover:underline dark:text-gray-200"
+				class:font-semibold={isDictionary}
+			>
+				{m.navDictionary()}
 			</a>
 		</nav>
 		<div class="flex items-center gap-2">
