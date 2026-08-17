@@ -128,10 +128,12 @@ async function load(search: string): Promise<void> {
 <div
 	class="mx-auto flex h-full w-full flex-col gap-4 overflow-y-auto px-4 pb-10 pt-4 sm:px-6"
 >
-	<div class="flex w-full items-center justify-between gap-3">
+	<div
+		class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+	>
 		<div class="min-w-0">
 			<p class="text-xs text-gray-500 dark:text-gray-400">{m.pageEyebrow()}</p>
-			<h1 class="text-xl font-semibold">
+			<h1 class="truncate text-xl font-semibold">
 				{query ? formatIsoDate(query.date) : m.missingSelection()}
 			</h1>
 			{#if query}
@@ -146,7 +148,7 @@ async function load(search: string): Promise<void> {
 				</p>
 			{/if}
 		</div>
-		<div class="flex shrink-0 items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			{#if query}
 				<CopyLinkButton />
 				<FavoriteButton date={query.date} location={query.location} />
@@ -164,7 +166,7 @@ async function load(search: string): Promise<void> {
 		<div class="relative flex w-full flex-col gap-4">
 			{#if details}
 				<div
-					class="grid grid-cols-2 gap-4 transition-opacity lg:grid-cols-4"
+					class="grid grid-cols-2 gap-4 *:min-w-0 transition-opacity lg:grid-cols-4"
 					class:opacity-40={loading}
 					aria-busy={loading}
 				>
@@ -176,34 +178,35 @@ async function load(search: string): Promise<void> {
 						/>
 					{/if}
 
-					<Card class="w-full p-2 max-w-none" size="xl">
+					<Card class="w-full min-w-0 overflow-hidden p-2 max-w-none" size="xl">
+						{@const observerPlace =
+							details.location.label ||
+							formatCoordinates(details.location.lat, details.location.lon)}
 						<p class="mb-2 text-sm font-medium">{m.observerHeading()}</p>
-						<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+						<dl
+							class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm"
+						>
 							<dt class="text-gray-500 dark:text-gray-400">{m.place()}</dt>
-							<dd class="truncate" title={details.location.label}>
-								{details.location.label ||
-									formatCoordinates(
-										details.location.lat,
-										details.location.lon,
-									)}
+							<dd class="min-w-0 truncate" title={observerPlace}>
+								{observerPlace}
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">
 								{m.coordinates()}
 							</dt>
-							<dd class="font-medium tabular-nums">
+							<dd class="min-w-0 break-words font-medium tabular-nums">
 								{formatCoordinates(
 									details.location.lat,
 									details.location.lon,
 								)}
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.elevation()}</dt>
-							<dd class="tabular-nums">
+							<dd class="min-w-0 tabular-nums">
 								{m.elevationMeters({
 									meters: Math.round(details.location.height),
 								})}
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.timezone()}</dt>
-							<dd>{timeZone}</dd>
+							<dd class="min-w-0 break-words" title={timeZone}>{timeZone}</dd>
 						</dl>
 					</Card>
 
@@ -424,6 +427,7 @@ async function load(search: string): Promise<void> {
 					<CompareLocationsCard
 						date={details.date}
 						primary={details}
+						centralLine={paths?.centralLine ?? []}
 						onCompareLocations={(locations) => {
 							compareLocations = locations;
 						}}

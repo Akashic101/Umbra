@@ -44,5 +44,5 @@ async function copyLink(): Promise<void> {
 	aria-label={copied ? m.linkCopiedAria() : m.copyLinkAria()}
 >
 	<LinkOutline class="h-4 w-4" />
-	<span>{copied ? m.copied() : m.copyLink()}</span>
+	<span class="hidden sm:inline">{copied ? m.copied() : m.copyLink()}</span>
 </Button>

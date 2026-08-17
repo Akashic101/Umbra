@@ -13,12 +13,14 @@ import { untrack } from "svelte";
 import { serializeDetailsQuery } from "$lib/details-query";
 import { formatLocalTypeTitle } from "$lib/eclipse/detail-format";
 import { haversineKm, samePlace } from "$lib/eclipse/geo";
+import { nearestLandLocation } from "$lib/eclipse/land";
 import { formatDuration, formatPercent } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
 import type {
+	LatLon,
 	ObserverEclipseDetails,
 	ObserverLocation,
 	Place,
@@ -54,10 +56,12 @@ type DisplayRow = {
 let {
 	date,
 	primary,
+	centralLine = [],
 	onCompareLocations,
 }: {
 	date: string;
 	primary: ObserverEclipseDetails;
+	centralLine?: LatLon[];
 	onCompareLocations?: (locations: ObserverLocation[]) => void;
 } = $props();
 
@@ -66,6 +70,9 @@ let searchQuery = $state("");
 let searchResults = $state<Place[]>([]);
 let searchError = $state<string | null>(null);
 let searching = $state(false);
+let addingGreatest = $state(false);
+let addedGreatest = $state(false);
+let greatestExtraId = $state<string | null>(null);
 let addToken = 0;
 
 const atMax = $derived(extras.length >= MAX_EXTRAS);
@@ -76,6 +83,9 @@ const canAddGreatest = $derived.by(() => {
 		return false;
 	}
 	const greatest = { lat: g.greatestLat, lon: g.greatestLon };
+	if (addedGreatest) {
+		return false;
+	}
 	if (samePlace(greatest, primary.location)) {
 		return false;
 	}
@@ -163,6 +173,9 @@ $effect(() => {
 		searchQuery = "";
 		searchResults = [];
 		searchError = null;
+		addingGreatest = false;
+		addedGreatest = false;
+		greatestExtraId = null;
 	});
 });
 
@@ -275,28 +288,55 @@ async function pickPlace(place: Place): Promise<void> {
 
 async function addGreatest(): Promise<void> {
 	const g = primary.global;
-	if (!g) {
+	if (!g || addingGreatest) {
 		return;
 	}
-	await addLocation({
-		lat: g.greatestLat,
-		lon: g.greatestLon,
-		height: 0,
-		label: m.compareGreatest(),
-	});
+	addingGreatest = true;
+	try {
+		const origin = { lat: g.greatestLat, lon: g.greatestLon };
+		let path = centralLine;
+		if (
+			path.length === 0 &&
+			(g.type === "total" || g.type === "annular" || g.type === "hybrid")
+		) {
+			path =
+				(await eclipseService.getPaths(date).catch(() => null))?.centralLine ??
+				[];
+		}
+		const found = await nearestLandLocation(origin, path, {
+			getElevations: (points) => elevation.getMetersMany(points),
+		});
+		if (!found.onLand) {
+			searchError = m.compareGreatestNoLand();
+			return;
+		}
+		const snapped = !samePlace(found.point, origin);
+		const addedId = await addLocation({
+			lat: found.point.lat,
+			lon: found.point.lon,
+			height: 0,
+			label: snapped ? m.compareGreatestLand() : m.compareGreatest(),
+		});
+		if (addedId) {
+			addedGreatest = true;
+			greatestExtraId = addedId;
+		}
+	} finally {
+		addingGreatest = false;
+	}
 }
 
-async function addLocation(location: ObserverLocation): Promise<void> {
+async function addLocation(location: ObserverLocation): Promise<string | null> {
 	if (
 		samePlace(location, primary.location) ||
 		extras.some((row) => samePlace(location, row.location))
 	) {
 		searchError = m.compareAlreadyAdded();
-		return;
+		return null;
 	}
 	if (extras.length >= MAX_EXTRAS) {
 		searchError = m.compareMaxReached();
-		return;
+		return null;
 	}
 
 	const id = crypto.randomUUID();
@@ -312,7 +352,7 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 	try {
 		const meters = await elevation.getMeters(location.lat, location.lon);
 		if (token !== addToken) {
-			return;
+			return null;
 		}
 		const resolved: ObserverLocation = {
 			...location,
@@ -320,7 +360,7 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 		};
 		const details = await eclipseService.getObserverDetails(date, resolved);
 		if (token !== addToken) {
-			return;
+			return null;
 		}
 		setExtras(
 			extras.map((row) =>
@@ -335,9 +375,10 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 					: row,
 			),
 		);
+		return id;
 	} catch {
 		if (token !== addToken) {
-			return;
+			return null;
 		}
 		setExtras(
 			extras.map((row) =>
@@ -346,11 +387,16 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 					: row,
 			),
 		);
+		return id;
 	}
 }
 
 function removeExtra(id: string): void {
 	setExtras(extras.filter((row) => row.id !== id));
+	if (id === greatestExtraId) {
+		addedGreatest = false;
+		greatestExtraId = null;
+	}
 }
 </script>
 
@@ -423,7 +469,11 @@ function removeExtra(id: string): void {
 						color="alternative"
 						class="shrink-0"
 						onclick={addGreatest}
+						disabled={addingGreatest}
 					>
+						{#if addingGreatest}
+							<Spinner size="4" />
+						{/if}
 						{m.compareGreatest()}
 					</Button>
 				{/if}

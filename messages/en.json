@@ -140,6 +140,8 @@
 	"compareRemoveAria": "Remove comparison place",
 	"compareYou": "You",
 	"compareGreatest": "Add greatest eclipse",
+	"compareGreatestLand": "Nearest land to greatest eclipse",
+	"compareGreatestNoLand": "No land found near greatest eclipse.",
 	"compareMaxReached": "You can compare up to three places.",
 	"compareAlreadyAdded": "That place is already in the comparison.",
 	"compareColPlace": "Place",

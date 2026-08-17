@@ -140,6 +140,8 @@
 	"compareRemoveAria": "Vergleichsort entfernen",
 	"compareYou": "Sie",
 	"compareGreatest": "Ort der größten Finsternis",
+	"compareGreatestLand": "Nächstes Land zur größten Finsternis",
+	"compareGreatestNoLand": "Kein Land in der Nähe der größten Finsternis gefunden.",
 	"compareMaxReached": "Sie können bis zu drei Orte vergleichen.",
 	"compareAlreadyAdded": "Dieser Ort ist bereits im Vergleich.",
 	"compareColPlace": "Ort",

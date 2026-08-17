@@ -34,9 +34,9 @@ function toggle(): void {
 >
 	{#if saved}
 		<StarSolid class="h-4 w-4" />
-		<span>{m.saved()}</span>
+		<span class="hidden sm:inline">{m.saved()}</span>
 	{:else}
 		<StarOutline class="h-4 w-4" />
-		<span>{m.save()}</span>
+		<span class="hidden sm:inline">{m.save()}</span>
 	{/if}
 </Button>
