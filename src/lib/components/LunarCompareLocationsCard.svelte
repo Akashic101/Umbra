@@ -15,6 +15,7 @@ import { formatLunarLocalTypeTitle } from "$lib/eclipse/detail-format";
 import { haversineKm, samePlace } from "$lib/eclipse/geo";
 import { formatDuration } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
+import { compareLocationsService } from "$lib/services/compare-locations";
 import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
@@ -133,12 +134,95 @@ $effect(() => {
 	primary.location.lon;
 	untrack(() => {
 		addToken += 1;
-		extras = [];
 		searchQuery = "";
 		searchResults = [];
 		searchError = null;
+		void restoreExtras(
+			compareLocationsService
+				.load("lunar", date, primary.location)
+				.filter((location) => !samePlace(location, primary.location)),
+		);
 	});
 });
+
+function snapshotLocation(location: ObserverLocation): ObserverLocation {
+	return {
+		lat: location.lat,
+		lon: location.lon,
+		height: location.height,
+		label: location.label,
+	};
+}
+
+function setExtras(next: ExtraRow[]): void {
+	extras = next;
+	compareLocationsService.save(
+		"lunar",
+		date,
+		primary.location,
+		next.map((row) => snapshotLocation(row.location)),
+	);
+}
+
+async function restoreExtras(locations: ObserverLocation[]): Promise<void> {
+	const token = addToken;
+	if (!locations.length) {
+		extras = [];
+		return;
+	}
+	const rows: ExtraRow[] = locations.map((location) => ({
+		id: crypto.randomUUID(),
+		location: snapshotLocation(location),
+		details: null,
+		loading: true,
+		error: null,
+	}));
+	extras = rows;
+	await Promise.all(
+		rows.map(async (row) => {
+			try {
+				const meters = await elevation.getMeters(
+					row.location.lat,
+					row.location.lon,
+				);
+				if (token !== addToken) {
+					return;
+				}
+				const resolved: ObserverLocation = {
+					...row.location,
+					height: meters ?? row.location.height ?? 0,
+				};
+				const details = await eclipseService.getLunarObserverDetails(
+					date,
+					resolved,
+				);
+				if (token !== addToken) {
+					return;
+				}
+				extras = extras.map((item) =>
+					item.id === row.id
+						? {
+								...item,
+								location: resolved,
+								details,
+								loading: false,
+								error: null,
+							}
+						: item,
+				);
+			} catch {
+				if (token !== addToken) {
+					return;
+				}
+				extras = extras.map((item) =>
+					item.id === row.id
+						? { ...item, loading: false, error: m.compareError() }
+						: item,
+				);
+			}
+		}),
+	);
+}
 
 function placeLabel(location: ObserverLocation): string {
 	return location.label || formatCoordinates(location.lat, location.lon);
@@ -258,10 +342,10 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 
 	const id = crypto.randomUUID();
 	const token = addToken;
-	extras = [
+	setExtras([
 		...extras,
 		{ id, location, details: null, loading: true, error: null },
-	];
+	]);
 	searchQuery = "";
 	searchResults = [];
 	searchError = null;
@@ -282,29 +366,35 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 		if (token !== addToken) {
 			return;
 		}
-		extras = extras.map((row) =>
-			row.id === id
-				? {
-						...row,
-						location: resolved,
-						details,
-						loading: false,
-						error: null,
-					}
-				: row,
+		setExtras(
+			extras.map((row) =>
+				row.id === id
+					? {
+							...row,
+							location: resolved,
+							details,
+							loading: false,
+							error: null,
+						}
+					: row,
+			),
 		);
 	} catch {
 		if (token !== addToken) {
 			return;
 		}
-		extras = extras.map((row) =>
-			row.id === id ? { ...row, loading: false, error: m.compareError() } : row,
+		setExtras(
+			extras.map((row) =>
+				row.id === id
+					? { ...row, loading: false, error: m.compareError() }
+					: row,
+			),
 		);
 	}
 }
 
 function removeExtra(id: string): void {
-	extras = extras.filter((row) => row.id !== id);
+	setExtras(extras.filter((row) => row.id !== id));
 }
 </script>
 

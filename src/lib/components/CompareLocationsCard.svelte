@@ -16,6 +16,7 @@ import { haversineKm, samePlace } from "$lib/eclipse/geo";
 import { nearestLandLocation } from "$lib/eclipse/land";
 import { formatDuration, formatPercent } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
+import { compareLocationsService } from "$lib/services/compare-locations";
 import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
@@ -169,19 +170,111 @@ $effect(() => {
 	primary.location.lon;
 	untrack(() => {
 		addToken += 1;
-		setExtras([]);
 		searchQuery = "";
 		searchResults = [];
 		searchError = null;
 		addingGreatest = false;
 		addedGreatest = false;
 		greatestExtraId = null;
+		void restoreExtras(
+			compareLocationsService
+				.load("solar", date, primary.location)
+				.filter((location) => !samePlace(location, primary.location)),
+		);
 	});
 });
 
+function snapshotLocation(location: ObserverLocation): ObserverLocation {
+	return {
+		lat: location.lat,
+		lon: location.lon,
+		height: location.height,
+		label: location.label,
+	};
+}
+
 function setExtras(next: ExtraRow[]): void {
 	extras = next;
-	onCompareLocations?.(next.map((row) => row.location));
+	const locations = next.map((row) => snapshotLocation(row.location));
+	onCompareLocations?.(locations);
+	compareLocationsService.save("solar", date, primary.location, locations);
+}
+
+async function restoreExtras(locations: ObserverLocation[]): Promise<void> {
+	const token = addToken;
+	if (!locations.length) {
+		extras = [];
+		onCompareLocations?.([]);
+		return;
+	}
+	const rows: ExtraRow[] = locations.map((location) => ({
+		id: crypto.randomUUID(),
+		location: snapshotLocation(location),
+		details: null,
+		loading: true,
+		error: null,
+	}));
+	extras = rows;
+	onCompareLocations?.(rows.map((row) => snapshotLocation(row.location)));
+	await Promise.all(
+		rows.map(async (row) => {
+			try {
+				const meters = await elevation.getMeters(
+					row.location.lat,
+					row.location.lon,
+				);
+				if (token !== addToken) {
+					return;
+				}
+				const resolved: ObserverLocation = {
+					...row.location,
+					height: meters ?? row.location.height ?? 0,
+				};
+				const details = await eclipseService.getObserverDetails(date, resolved);
+				if (token !== addToken) {
+					return;
+				}
+				extras = extras.map((item) =>
+					item.id === row.id
+						? {
+								...item,
+								location: resolved,
+								details,
+								loading: false,
+								error: null,
+							}
+						: item,
+				);
+			} catch {
+				if (token !== addToken) {
+					return;
+				}
+				extras = extras.map((item) =>
+					item.id === row.id
+						? { ...item, loading: false, error: m.compareError() }
+						: item,
+				);
+			}
+		}),
+	);
+	if (token !== addToken) {
+		return;
+	}
+	const g = primary.global;
+	if (!g) {
+		return;
+	}
+	const greatest = { lat: g.greatestLat, lon: g.greatestLon };
+	const match = extras.find(
+		(row) =>
+			samePlace(greatest, row.location) ||
+			row.location.label === m.compareGreatest() ||
+			row.location.label === m.compareGreatestLand(),
+	);
+	if (match) {
+		addedGreatest = true;
+		greatestExtraId = match.id;
+	}
 }
 
 function placeLabel(location: ObserverLocation): string {
