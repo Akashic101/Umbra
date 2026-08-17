@@ -92,12 +92,7 @@ const zenith = $derived.by(() => {
 
 <div class="relative flex h-full min-h-0">
 	<div class="min-h-0 min-w-0 flex-1">
-		<EclipseMap
-			location={appState.location}
-			{zenith}
-			nightLights
-			onSelect={onMapSelect}
-		/>
+		<EclipseMap location={appState.location} {zenith} onSelect={onMapSelect} />
 	</div>
 	<aside
 		class="hidden h-full w-[24rem] shrink-0 overflow-hidden border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 md:block"

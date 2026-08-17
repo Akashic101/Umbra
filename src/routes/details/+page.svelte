@@ -4,6 +4,7 @@ import { untrack } from "svelte";
 import { page } from "$app/state";
 import AltitudeChart from "$lib/components/AltitudeChart.svelte";
 import AzimuthChart from "$lib/components/AzimuthChart.svelte";
+import CloudForecastCard from "$lib/components/CloudForecastCard.svelte";
 import CompareLocationsCard from "$lib/components/CompareLocationsCard.svelte";
 import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
 import CoverageDisk from "$lib/components/CoverageDisk.svelte";
@@ -44,6 +45,24 @@ let loadToken = 0;
 
 const query = $derived(parseDetailsQuery(page.url.search));
 const timeZone = deviceTimeZone();
+const cloudContacts = $derived.by(() => {
+	const c = details?.contacts;
+	if (!c) {
+		return [];
+	}
+	const rows: { key: string; label: string; iso: string | null }[] = [
+		{ key: "c1", label: m.firstContact(), iso: c.c1 },
+	];
+	if (c.c2) {
+		rows.push({ key: "c2", label: m.secondContact(), iso: c.c2 });
+	}
+	rows.push({ key: "max", label: m.greatest(), iso: c.max });
+	if (c.c3) {
+		rows.push({ key: "c3", label: m.thirdContact(), iso: c.c3 });
+	}
+	rows.push({ key: "c4", label: m.fourthContact(), iso: c.c4 });
+	return rows;
+});
 
 // Depend only on search; untrack async work so loading/details/error writes
 // do not re-enter the effect (which previously left loading stuck true).
@@ -402,6 +421,11 @@ async function load(search: string): Promise<void> {
 					<StagesCard
 						contacts={details.contacts}
 						localType={details.localType}
+					/>
+
+					<CloudForecastCard
+						location={details.location}
+						contacts={cloudContacts}
 					/>
 
 					<CoverageScrubber

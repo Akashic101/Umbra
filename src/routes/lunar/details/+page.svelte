@@ -2,6 +2,7 @@
 import { Alert, Button, Card, Progressbar, Spinner } from "flowbite-svelte";
 import { untrack } from "svelte";
 import { page } from "$app/state";
+import CloudForecastCard from "$lib/components/CloudForecastCard.svelte";
 import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
 import LunarAltitudeChart from "$lib/components/LunarAltitudeChart.svelte";
 import LunarCompareLocationsCard from "$lib/components/LunarCompareLocationsCard.svelte";
@@ -28,7 +29,7 @@ import {
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
-import type { LunarObserverDetails } from "$lib/types";
+import type { LunarContactKey, LunarObserverDetails } from "$lib/types";
 
 let details = $state.raw<LunarObserverDetails | null>(null);
 let loading = $state(true);
@@ -37,6 +38,28 @@ let loadToken = 0;
 
 const query = $derived(parseDetailsQuery(page.url.search));
 const timeZone = deviceTimeZone();
+const lunarCloudOrder: LunarContactKey[] = [
+	"p1",
+	"u1",
+	"u2",
+	"max",
+	"u3",
+	"u4",
+	"p4",
+];
+const cloudContacts = $derived.by(() => {
+	const c = details?.contacts;
+	if (!c) {
+		return [];
+	}
+	return lunarCloudOrder
+		.map((key) => ({
+			key,
+			label: formatLunarContactLabel(key),
+			iso: c[key],
+		}))
+		.filter((row) => row.iso);
+});
 
 $effect(() => {
 	const search = page.url.search;
@@ -349,6 +372,11 @@ async function load(search: string): Promise<void> {
 					<LunarCompareLocationsCard date={details.date} primary={details} />
 
 					<LunarStagesCard contacts={details.contacts} />
+
+					<CloudForecastCard
+						location={details.location}
+						contacts={cloudContacts}
+					/>
 
 					<LunarCoverageScrubber
 						series={details.series ?? []}

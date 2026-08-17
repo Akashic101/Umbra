@@ -12,6 +12,7 @@ import {
 	localDateKey,
 } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
+import CloudForecastCard from "./CloudForecastCard.svelte";
 import CoverageDisk from "./CoverageDisk.svelte";
 import FavoriteButton from "./FavoriteButton.svelte";
 
@@ -150,6 +151,11 @@ $effect(() => {
 					</li>
 				{/each}
 			</ul>
+			<CloudForecastCard
+				compact
+				location={appState.location}
+				contacts={contactRows}
+			/>
 			<p class="text-sm">
 				{m.totalLength({
 					duration: formatDuration(appState.circumstances.durationSeconds),

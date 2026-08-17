@@ -17,6 +17,7 @@ import {
 import { lunarState } from "$lib/lunar-state.svelte";
 import { m } from "$lib/paraglide/messages.js";
 import type { LunarContactKey } from "$lib/types";
+import CloudForecastCard from "./CloudForecastCard.svelte";
 import LunarUmbraDisk from "./LunarUmbraDisk.svelte";
 
 let nowMs = $state(Date.now());
@@ -154,6 +155,11 @@ $effect(() => {
 					</li>
 				{/each}
 			</ul>
+			<CloudForecastCard
+				compact
+				location={appState.location}
+				contacts={contactRows}
+			/>
 			<p class="text-sm">
 				{#if lunarState.circumstances.totalDurationSeconds}
 					{m.centralDuration({

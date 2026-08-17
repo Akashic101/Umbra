@@ -69,6 +69,11 @@ export function listGlossary(): GlossaryEntry[] {
 			definition: m.dictDefCircumstances(),
 		},
 		{
+			id: "cloud-cover",
+			term: m.dictTermCloudCover(),
+			definition: m.dictDefCloudCover(),
+		},
+		{
 			id: "contact",
 			term: m.dictTermContact(),
 			definition: m.dictDefContact(),
