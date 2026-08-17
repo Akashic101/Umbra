@@ -15,7 +15,6 @@ import { formatLocalTypeTitle } from "$lib/eclipse/detail-format";
 import { haversineKm, samePlace } from "$lib/eclipse/geo";
 import { formatDuration, formatPercent } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
@@ -233,7 +232,7 @@ function toDisplayRow(input: {
 		loading,
 		openHref: isPrimary
 			? null
-			: localizeHref(`/details?${serializeDetailsQuery({ date, location })}`),
+			: `/details?${serializeDetailsQuery({ date, location })}`,
 		bestCoverage: input.bestCoverage,
 		bestCentral: input.bestCentral,
 	};

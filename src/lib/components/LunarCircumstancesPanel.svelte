@@ -16,7 +16,6 @@ import {
 } from "$lib/eclipse/time";
 import { lunarState } from "$lib/lunar-state.svelte";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import type { LunarContactKey } from "$lib/types";
 import LunarUmbraDisk from "./LunarUmbraDisk.svelte";
 
@@ -42,7 +41,7 @@ const detailsHref = $derived.by(() => {
 			label: appState.location.label,
 		},
 	});
-	return localizeHref(`/lunar/details?${query}`);
+	return `/lunar/details?${query}`;
 });
 
 const contactOrder: LunarContactKey[] = [

@@ -11,7 +11,7 @@ export default defineConfig({
 			project: "./project.inlang",
 			outdir: "./src/lib/paraglide",
 			emitTsDeclarations: true,
-			strategy: ["url", "cookie", "baseLocale"],
+			strategy: ["cookie", "preferredLanguage", "baseLocale"],
 		}),
 		sveltekit({
 			compilerOptions: {
@@ -19,7 +19,8 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes("node_modules") ? undefined : true,
 			},
-			// Absolute asset URLs avoid locale-prefixed 404s with static SPA fallback.
+			// Absolute asset URLs keep the SPA fallback from requesting assets
+			// relative to the current path.
 			paths: { relative: false },
 			adapter: adapter({
 				fallback: "200.html",

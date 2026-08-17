@@ -26,7 +26,6 @@ import {
 	formatMagnitude,
 } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
 import type { LunarObserverDetails } from "$lib/types";
@@ -113,7 +112,7 @@ async function load(search: string): Promise<void> {
 			{#if query}
 				<CopyLinkButton />
 			{/if}
-			<Button color="alternative" size="sm" href={localizeHref("/lunar")}>
+			<Button color="alternative" size="sm" href="/lunar">
 				{m.backToLunarMap()}
 			</Button>
 		</div>
@@ -121,7 +120,7 @@ async function load(search: string): Promise<void> {
 
 	{#if !query}
 		<Alert color="yellow">{m.missingQueryAlert()}</Alert>
-		<Button href={localizeHref("/lunar")}>{m.chooseLocation()}</Button>
+		<Button href="/lunar">{m.chooseLocation()}</Button>
 	{:else}
 		<div class="relative flex w-full flex-col gap-4">
 			{#if details}

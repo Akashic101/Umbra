@@ -32,7 +32,6 @@ import {
 	formatPercent,
 } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
 import type { EclipsePaths, ObserverEclipseDetails } from "$lib/types";
@@ -128,7 +127,7 @@ async function load(search: string): Promise<void> {
 				<CopyLinkButton />
 				<FavoriteButton date={query.date} location={query.location} />
 			{/if}
-			<Button color="alternative" size="sm" href={localizeHref("/")}>
+			<Button color="alternative" size="sm" href="/">
 				{m.backToMap()}
 			</Button>
 		</div>
@@ -136,7 +135,7 @@ async function load(search: string): Promise<void> {
 
 	{#if !query}
 		<Alert color="yellow">{m.missingQueryAlert()}</Alert>
-		<Button href={localizeHref("/")}>{m.chooseLocation()}</Button>
+		<Button href="/">{m.chooseLocation()}</Button>
 	{:else}
 		<div class="relative flex w-full flex-col gap-4">
 			{#if details}

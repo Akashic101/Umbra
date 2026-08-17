@@ -12,7 +12,6 @@ import {
 	localDateKey,
 } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import CoverageDisk from "./CoverageDisk.svelte";
 import FavoriteButton from "./FavoriteButton.svelte";
 
@@ -38,7 +37,7 @@ const detailsHref = $derived.by(() => {
 			label: appState.location.label,
 		},
 	});
-	return localizeHref(`/details?${query}`);
+	return `/details?${query}`;
 });
 
 const contactRows = $derived.by(() => {

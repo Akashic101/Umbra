@@ -10,14 +10,13 @@ import { appState } from "$lib/app-state.svelte";
 import { serializeDetailsQuery } from "$lib/details-query";
 import { formatIsoDate } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
-import { localizeHref } from "$lib/paraglide/runtime";
 import { formatCoordinates } from "$lib/services/geocoding";
 
 function detailsHref(
 	date: string,
 	location: (typeof appState.favorites)[number]["location"],
 ): string {
-	return localizeHref(`/details?${serializeDetailsQuery({ date, location })}`);
+	return `/details?${serializeDetailsQuery({ date, location })}`;
 }
 
 function placeLabel(
