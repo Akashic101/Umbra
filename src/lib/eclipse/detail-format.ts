@@ -4,6 +4,9 @@ import type {
 	DaylightPhase,
 	EclipseType,
 	LocalEclipseType,
+	LunarContactKey,
+	LunarEclipseType,
+	LunarLocalType,
 	PathStatus,
 } from "$lib/types";
 import type { EclipseNowPhase } from "./now-mode";
@@ -222,4 +225,95 @@ export function formatLookDirection(
 		return m.lookBelowHorizon({ name, altitude: Math.abs(alt) });
 	}
 	return m.lookAboveHorizon({ name, altitude: alt });
+}
+
+export function formatLunarType(
+	type: LunarEclipseType | LunarLocalType | null | undefined,
+): string {
+	switch (type) {
+		case "total":
+			return m.lunarTypeTotal();
+		case "partial":
+			return m.lunarTypePartial();
+		case "penumbral":
+			return m.lunarTypePenumbral();
+		default:
+			return m.emDash();
+	}
+}
+
+export function formatLunarLocalTypeTitle(type: LunarLocalType): string {
+	switch (type) {
+		case "total":
+			return m.lunarLocalTypeTotal();
+		case "partial":
+			return m.lunarLocalTypePartial();
+		case "penumbral":
+			return m.lunarLocalTypePenumbral();
+		case "none":
+			return m.lunarLocalTypeNone();
+	}
+}
+
+export function formatLunarContactLabel(key: LunarContactKey): string {
+	switch (key) {
+		case "p1":
+			return m.contactP1();
+		case "u1":
+			return m.contactU1();
+		case "u2":
+			return m.contactU2();
+		case "max":
+			return m.greatestEclipse();
+		case "u3":
+			return m.contactU3();
+		case "u4":
+			return m.contactU4();
+		case "p4":
+			return m.contactP4();
+	}
+}
+
+export function formatLunarStageLabel(key: LunarContactKey): string {
+	switch (key) {
+		case "p1":
+			return m.stageP1();
+		case "u1":
+			return m.stageU1();
+		case "u2":
+			return m.stageU2();
+		case "max":
+			return m.stageGreatest();
+		case "u3":
+			return m.stageU3();
+		case "u4":
+			return m.stageU4();
+		case "p4":
+			return m.stageP4();
+	}
+}
+
+export function formatLunarNowPhase(
+	phase: EclipseNowPhase,
+	localType: LunarLocalType,
+): string {
+	switch (phase) {
+		case "upcoming":
+			return m.nowPhaseUpcoming();
+		case "partial_ingress":
+			if (localType === "penumbral") {
+				return m.lunarNowPhasePenumbral();
+			}
+			return m.lunarNowPhasePartial();
+		case "central":
+			return m.lunarNowPhaseTotality();
+		case "partial_egress":
+			return m.lunarNowPhaseEgress();
+		case "ended":
+			return m.nowPhaseEnded();
+	}
+}
+
+export function formatMoonUp(up: boolean): string {
+	return up ? m.moonAboveHorizon() : m.moonBelowHorizon();
 }

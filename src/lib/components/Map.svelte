@@ -3,21 +3,24 @@ import type { CircleMarker, LayerGroup, Map as LeafletMap } from "leaflet";
 import type { Attachment } from "svelte/attachments";
 import { toLeafletRing } from "$lib/map/geo";
 import { m } from "$lib/paraglide/messages.js";
-import type { EclipsePaths, ObserverLocation } from "$lib/types";
+import type { EclipsePaths, LatLon, ObserverLocation } from "$lib/types";
 import "leaflet/dist/leaflet.css";
 
 let {
 	location = null,
 	paths = null,
+	zenith = null,
 	onSelect,
 }: {
 	location?: ObserverLocation | null;
 	paths?: EclipsePaths | null;
+	zenith?: LatLon | null;
 	onSelect: (lat: number, lon: number) => void;
 } = $props();
 
 let map: LeafletMap | undefined;
 let marker: CircleMarker | undefined;
+let zenithMarker: CircleMarker | undefined;
 let overlay: LayerGroup | undefined;
 let leaflet: typeof import("leaflet") | undefined;
 
@@ -43,6 +46,7 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 			onSelect(event.latlng.lat, event.latlng.lng);
 		});
 		syncMarker();
+		syncZenith();
 		syncPaths();
 		map.invalidateSize();
 		resizeObserver = new ResizeObserver(() => map?.invalidateSize());
@@ -54,6 +58,7 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 		map?.remove();
 		map = undefined;
 		marker = undefined;
+		zenithMarker = undefined;
 		overlay = undefined;
 		leaflet = undefined;
 	};
@@ -62,6 +67,11 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 $effect(() => {
 	location;
 	syncMarker();
+});
+
+$effect(() => {
+	zenith;
+	syncZenith();
 });
 
 $effect(() => {
@@ -91,6 +101,32 @@ function syncMarker(): void {
 			.addTo(map);
 	} else {
 		marker.setLatLng(latlng);
+	}
+}
+
+function syncZenith(): void {
+	if (!map || !leaflet) {
+		return;
+	}
+	if (!zenith) {
+		zenithMarker?.remove();
+		zenithMarker = undefined;
+		return;
+	}
+	const latlng: [number, number] = [zenith.lat, zenith.lon];
+	if (!zenithMarker) {
+		zenithMarker = leaflet
+			.circleMarker(latlng, {
+				radius: 7,
+				color: "#b45309",
+				fillColor: "#f59e0b",
+				fillOpacity: 1,
+				weight: 2,
+			})
+			.bindTooltip(m.zenithMarkerAria(), { direction: "top" })
+			.addTo(map);
+	} else {
+		zenithMarker.setLatLng(latlng);
 	}
 }
 

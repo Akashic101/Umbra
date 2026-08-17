@@ -3,6 +3,12 @@
 import { listCatalog } from "./catalog";
 import { getObserverEclipseDetails } from "./detail";
 import { getLocalCircumstances, getLocalSummaries } from "./local";
+import { listLunarCatalog } from "./lunar-catalog";
+import { getLunarObserverDetails } from "./lunar-detail";
+import {
+	getLunarLocalCircumstances,
+	getLunarLocalSummaries,
+} from "./lunar-local";
 import { getEclipsePaths } from "./paths";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 
@@ -63,6 +69,34 @@ function handle(request: WorkerRequest): WorkerResponse {
 				ok: true,
 				type: "observerDetails",
 				payload: getObserverEclipseDetails(request.date, request.location),
+			};
+		case "lunarCatalog":
+			return {
+				id: request.id,
+				ok: true,
+				type: "lunarCatalog",
+				payload: listLunarCatalog(),
+			};
+		case "lunarLocalAll":
+			return {
+				id: request.id,
+				ok: true,
+				type: "lunarLocalAll",
+				payload: getLunarLocalSummaries(request.location),
+			};
+		case "lunarCircumstances":
+			return {
+				id: request.id,
+				ok: true,
+				type: "lunarCircumstances",
+				payload: getLunarLocalCircumstances(request.date, request.location),
+			};
+		case "lunarObserverDetails":
+			return {
+				id: request.id,
+				ok: true,
+				type: "lunarObserverDetails",
+				payload: getLunarObserverDetails(request.date, request.location),
 			};
 	}
 }

@@ -1,4 +1,9 @@
-import type { CircumstanceSample, ContactTimes } from "$lib/types";
+import type {
+	CircumstanceSample,
+	ContactTimes,
+	LunarContactKey,
+	LunarContactTimes,
+} from "$lib/types";
 
 export type ContactKey = "c1" | "c2" | "max" | "c3" | "c4";
 
@@ -119,9 +124,113 @@ export function getEclipseNowState(
 	};
 }
 
-/** Index in a C1–C4 sample series nearest to `nowMs`. */
+export type LunarNowState = {
+	phase: EclipseNowPhase;
+	isLive: boolean;
+	progress01: number | null;
+	nextKey: LunarContactKey | null;
+	nextMs: number | null;
+	remainingToNextMs: number | null;
+	remainingToMaxMs: number | null;
+	remainingOfCentralMs: number | null;
+	p1Ms: number | null;
+	p4Ms: number | null;
+	maxMs: number | null;
+};
+
+const LUNAR_ORDER: LunarContactKey[] = [
+	"p1",
+	"u1",
+	"u2",
+	"max",
+	"u3",
+	"u4",
+	"p4",
+];
+
+/**
+ * Live lunar timeline from P1→P4. Totality is U2→U3 when those contacts exist.
+ */
+export function getLunarNowState(
+	contacts: LunarContactTimes,
+	nowMs: number,
+): LunarNowState | null {
+	const p1Ms = parseMs(contacts.p1);
+	const u1Ms = parseMs(contacts.u1);
+	const u2Ms = parseMs(contacts.u2);
+	const maxMs = parseMs(contacts.max);
+	const u3Ms = parseMs(contacts.u3);
+	const p4Ms = parseMs(contacts.p4);
+	if (p1Ms === null || p4Ms === null || !Number.isFinite(nowMs)) {
+		return null;
+	}
+
+	const ordered: { key: LunarContactKey; ms: number }[] = [];
+	for (const key of LUNAR_ORDER) {
+		const ms = parseMs(contacts[key]);
+		if (ms !== null) {
+			ordered.push({ key, ms });
+		}
+	}
+	ordered.sort((a, b) => a.ms - b.ms);
+
+	let nextKey: LunarContactKey | null = null;
+	let nextMs: number | null = null;
+	for (const row of ordered) {
+		if (row.ms > nowMs) {
+			nextKey = row.key;
+			nextMs = row.ms;
+			break;
+		}
+	}
+
+	let phase: EclipseNowPhase;
+	if (nowMs < p1Ms) {
+		phase = "upcoming";
+	} else if (nowMs >= p4Ms) {
+		phase = "ended";
+	} else if (u2Ms !== null && u3Ms !== null && nowMs >= u2Ms && nowMs < u3Ms) {
+		phase = "central";
+	} else if (maxMs !== null && nowMs >= maxMs) {
+		phase = "partial_egress";
+	} else if (u1Ms !== null && nowMs >= u1Ms) {
+		phase =
+			maxMs !== null && nowMs < maxMs ? "partial_ingress" : "partial_egress";
+	} else {
+		phase = "partial_ingress";
+	}
+
+	const isLive = nowMs >= p1Ms && nowMs < p4Ms;
+	const span = Math.max(p4Ms - p1Ms, 1);
+	const progress01 = isLive
+		? Math.min(1, Math.max(0, (nowMs - p1Ms) / span))
+		: null;
+
+	const remainingToNextMs =
+		nextMs !== null ? Math.max(0, nextMs - nowMs) : null;
+	const remainingToMaxMs =
+		maxMs !== null && nowMs < maxMs ? Math.max(0, maxMs - nowMs) : null;
+	const remainingOfCentralMs =
+		phase === "central" && u3Ms !== null ? Math.max(0, u3Ms - nowMs) : null;
+
+	return {
+		phase,
+		isLive,
+		progress01,
+		nextKey,
+		nextMs,
+		remainingToNextMs,
+		remainingToMaxMs,
+		remainingOfCentralMs,
+		p1Ms,
+		p4Ms,
+		maxMs,
+	};
+}
+
+/** Index in a sample series nearest to `nowMs`. */
 export function seriesIndexAtMs(
-	series: CircumstanceSample[],
+	series: Pick<CircumstanceSample, "iso">[],
 	nowMs: number,
 ): number {
 	if (series.length === 0) {

@@ -1,25 +1,22 @@
 <script lang="ts">
 import {
-	type ContactMarkerKey,
 	chartXAtMs,
-	contactMarkerDefs,
 	formatChartHm,
+	type LunarChartMarkerKey,
+	lunarContactMarkerDefs,
 	thirtyMinuteTickMs,
 } from "$lib/eclipse/chart-time";
-import { formatCentralWord } from "$lib/eclipse/detail-format";
 import { m } from "$lib/paraglide/messages.js";
-import type { ContactTimes, LocalEclipseType } from "$lib/types";
+import type { LunarContactTimes } from "$lib/types";
 
 type AltitudePoint = { iso: string; altitudeDeg: number };
 
 let {
 	samples = [],
 	contacts,
-	localType = "partial",
 }: {
 	samples?: AltitudePoint[];
-	contacts: ContactTimes;
-	localType?: LocalEclipseType;
+	contacts: LunarContactTimes;
 } = $props();
 
 const width = 320;
@@ -30,7 +27,7 @@ const padT = 18;
 const padB = 32;
 
 type ContactMarker = {
-	key: ContactMarkerKey;
+	key: LunarChartMarkerKey;
 	label: string;
 	x: number;
 	y: number;
@@ -54,8 +51,12 @@ const chart = $derived.by(() => {
 	const plotW = width - padL - padR;
 	const plotH = height - padT - padB;
 	const plotBottom = padT + plotH;
+	const lastSample = samples[samples.length - 1];
+	if (!lastSample) {
+		return null;
+	}
 	const startMs = Date.parse(samples[0].iso);
-	const endMs = Date.parse(samples.at(-1)!.iso);
+	const endMs = Date.parse(lastSample.iso);
 	const spanMs = Math.max(endMs - startMs, 1);
 
 	const points = samples.map((sample, index) => {
@@ -89,7 +90,7 @@ const chart = $derived.by(() => {
 	});
 
 	const markers: ContactMarker[] = [];
-	for (const def of contactMarkerDefs(contacts)) {
+	for (const def of lunarContactMarkerDefs(contacts)) {
 		if (!def.iso) {
 			continue;
 		}
@@ -116,8 +117,7 @@ const chart = $derived.by(() => {
 	}
 
 	const hasCentral =
-		markers.some((m) => m.key === "c2") || markers.some((m) => m.key === "c3");
-	const centralWord = formatCentralWord(localType);
+		markers.some((m) => m.key === "u2") || markers.some((m) => m.key === "u3");
 
 	return {
 		points,
@@ -130,7 +130,6 @@ const chart = $derived.by(() => {
 		timeTicks,
 		markers,
 		hasCentral,
-		centralWord,
 		plotTop: padT,
 		plotBottom,
 	};
@@ -224,13 +223,17 @@ function altitudeAtMs(ms: number, series: AltitudePoint[]): number | null {
 	if (series.length === 0) {
 		return null;
 	}
+	const last = series[series.length - 1];
+	if (!last) {
+		return null;
+	}
 	const firstMs = Date.parse(series[0].iso);
-	const lastMs = Date.parse(series.at(-1)!.iso);
+	const lastMs = Date.parse(last.iso);
 	if (ms <= firstMs) {
 		return series[0].altitudeDeg;
 	}
 	if (ms >= lastMs) {
-		return series.at(-1)!.altitudeDeg;
+		return last.altitudeDeg;
 	}
 	for (let i = 0; i < series.length - 1; i++) {
 		const aMs = Date.parse(series[i].iso);
@@ -255,9 +258,9 @@ function altitudeAtMs(ms: number, series: AltitudePoint[]): number | null {
 		viewBox="0 0 {width} {height}"
 		class="h-auto w-full"
 		role="img"
-		aria-label={m.sunAltitudeAria()}
+		aria-label={m.moonAltitudeAria()}
 	>
-		<title>{m.sunAltitudeTitle()}</title>
+		<title>{m.moonAltitudeTitle()}</title>
 		{#each chart.timeTicks as tick (tick.ms)}
 			<line
 				x1={tick.x}
@@ -373,7 +376,7 @@ function altitudeAtMs(ms: number, series: AltitudePoint[]): number | null {
 	</svg>
 	{#if chart.hasCentral}
 		<p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-			{m.chartContactLegend({ centralWord: chart.centralWord })}
+			{m.lunarChartLegend()}
 		</p>
 	{/if}
 {:else}

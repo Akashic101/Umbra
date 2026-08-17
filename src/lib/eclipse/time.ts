@@ -130,3 +130,11 @@ export function formatPercent(value: number): string {
 	}
 	return m.percent({ value: (value * 100).toFixed(1) });
 }
+
+/** Signed eclipse magnitude (lunar umbral/penumbral; may exceed 1). */
+export function formatMagnitude(value: number): string {
+	if (!Number.isFinite(value)) {
+		return m.emDash();
+	}
+	return value.toFixed(3);
+}

@@ -1,10 +1,10 @@
 <script lang="ts">
 import {
+	type ContactMarkerKey,
 	chartXAtMs,
 	contactMarkerDefs,
 	formatChartHm,
 	thirtyMinuteTickMs,
-	type ContactMarkerKey,
 } from "$lib/eclipse/chart-time";
 import { formatCentralWord } from "$lib/eclipse/detail-format";
 import { m } from "$lib/paraglide/messages.js";

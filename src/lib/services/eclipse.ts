@@ -5,6 +5,10 @@ import type {
 	EclipsePaths,
 	LocalCircumstances,
 	LocalSummary,
+	LunarCatalogEntry,
+	LunarLocalCircumstances,
+	LunarLocalSummary,
+	LunarObserverDetails,
 	ObserverEclipseDetails,
 	ObserverLocation,
 } from "$lib/types";
@@ -21,6 +25,18 @@ export type EclipseService = {
 		date: string,
 		location: ObserverLocation,
 	) => Promise<ObserverEclipseDetails>;
+	getLunarCatalog: () => Promise<LunarCatalogEntry[]>;
+	getLunarLocalSummaries: (
+		location: ObserverLocation,
+	) => Promise<LunarLocalSummary[]>;
+	getLunarCircumstances: (
+		date: string,
+		location: ObserverLocation,
+	) => Promise<LunarLocalCircumstances>;
+	getLunarObserverDetails: (
+		date: string,
+		location: ObserverLocation,
+	) => Promise<LunarObserverDetails>;
 };
 
 export type EclipseServiceDeps = {
@@ -157,6 +173,25 @@ export function createEclipseService(
 			}),
 		getPaths: (date) => request<EclipsePaths>({ type: "paths", date }),
 		getObserverDetails,
+		getLunarCatalog: () =>
+			request<LunarCatalogEntry[]>({ type: "lunarCatalog" }),
+		getLunarLocalSummaries: (location) =>
+			request<LunarLocalSummary[]>({
+				type: "lunarLocalAll",
+				location: cloneLocation(location),
+			}),
+		getLunarCircumstances: (date, location) =>
+			request<LunarLocalCircumstances>({
+				type: "lunarCircumstances",
+				date,
+				location: cloneLocation(location),
+			}),
+		getLunarObserverDetails: (date, location) =>
+			request<LunarObserverDetails>({
+				type: "lunarObserverDetails",
+				date,
+				location: cloneLocation(location),
+			}),
 	};
 }
 

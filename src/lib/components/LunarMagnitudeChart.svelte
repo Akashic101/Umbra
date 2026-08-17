@@ -1,25 +1,22 @@
 <script lang="ts">
 import {
-	type ContactMarkerKey,
 	chartXAtMs,
-	contactMarkerDefs,
 	formatChartHm,
+	type LunarChartMarkerKey,
+	lunarContactMarkerDefs,
 	thirtyMinuteTickMs,
 } from "$lib/eclipse/chart-time";
-import { formatCentralWord } from "$lib/eclipse/detail-format";
 import { m } from "$lib/paraglide/messages.js";
-import type { ContactTimes, LocalEclipseType } from "$lib/types";
+import type { LunarContactTimes } from "$lib/types";
 
-type ObscurationPoint = { iso: string; obscuration: number };
+type MagnitudePoint = { iso: string; umbralMagnitude: number };
 
 let {
 	samples = [],
 	contacts,
-	localType = "partial",
 }: {
-	samples?: ObscurationPoint[];
-	contacts: ContactTimes;
-	localType?: LocalEclipseType;
+	samples?: MagnitudePoint[];
+	contacts: LunarContactTimes;
 } = $props();
 
 const width = 320;
@@ -28,11 +25,10 @@ const padL = 36;
 const padR = 12;
 const padT = 18;
 const padB = 32;
-const minObsc = 0;
-const maxObsc = 1;
+const minMag = 0;
 
 type ContactMarker = {
-	key: ContactMarkerKey;
+	key: LunarChartMarkerKey;
 	label: string;
 	x: number;
 	y: number;
@@ -44,18 +40,24 @@ const chart = $derived.by(() => {
 	if (samples.length < 2) {
 		return null;
 	}
+	const peak = Math.max(1, ...samples.map((s) => s.umbralMagnitude), 0);
+	const maxMag = peak * 1.05;
 	const plotW = width - padL - padR;
 	const plotH = height - padT - padB;
 	const plotBottom = padT + plotH;
+	const lastSample = samples[samples.length - 1];
+	if (!lastSample) {
+		return null;
+	}
 	const startMs = Date.parse(samples[0].iso);
-	const endMs = Date.parse(samples.at(-1)!.iso);
+	const endMs = Date.parse(lastSample.iso);
 	const spanMs = Math.max(endMs - startMs, 1);
 
 	const points = samples.map((sample, index) => {
-		const obsc = clamp01(sample.obscuration);
+		const mag = Math.max(0, sample.umbralMagnitude);
 		const x = padL + (plotW * index) / (samples.length - 1);
-		const y = padT + plotH * (1 - (obsc - minObsc) / (maxObsc - minObsc));
-		return { x, y, iso: sample.iso, obsc, ms: Date.parse(sample.iso) };
+		const y = padT + plotH * (1 - (mag - minMag) / (maxMag - minMag));
+		return { x, y, iso: sample.iso, mag, ms: Date.parse(sample.iso) };
 	});
 	const polyline = points
 		.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
@@ -74,11 +76,19 @@ const chart = $derived.by(() => {
 	});
 
 	const markers: ContactMarker[] = [];
-	for (const def of contactMarkerDefs(contacts)) {
+	for (const def of lunarContactMarkerDefs(contacts)) {
 		if (!def.iso) {
 			continue;
 		}
-		const pos = pointAtIso(def.iso, samples, points, startMs, spanMs, plotW);
+		const pos = pointAtIso(
+			def.iso,
+			samples,
+			points,
+			startMs,
+			spanMs,
+			plotW,
+			maxMag,
+		);
 		if (!pos) {
 			continue;
 		}
@@ -91,8 +101,8 @@ const chart = $derived.by(() => {
 	}
 
 	const hasCentral =
-		markers.some((m) => m.key === "c2") || markers.some((m) => m.key === "c3");
-	const centralWord = formatCentralWord(localType);
+		markers.some((row) => row.key === "u2") ||
+		markers.some((row) => row.key === "u3");
 
 	return {
 		polyline,
@@ -101,39 +111,32 @@ const chart = $derived.by(() => {
 		timeTicks,
 		markers,
 		hasCentral,
-		centralWord,
+		maxMag,
 		plotTop: padT,
 		plotBottom,
 	};
 });
 
-function clamp01(value: number): number {
-	if (!Number.isFinite(value)) {
-		return 0;
-	}
-	return Math.min(1, Math.max(0, value));
-}
-
 function pointAtIso(
 	iso: string,
-	series: ObscurationPoint[],
-	points: { x: number; y: number; ms: number; obsc: number }[],
+	series: MagnitudePoint[],
+	points: { x: number; y: number; ms: number; mag: number }[],
 	startMs: number,
 	spanMs: number,
 	plotW: number,
+	maxMag: number,
 ): { x: number; y: number } | null {
 	const ms = Date.parse(iso);
 	if (!Number.isFinite(ms)) {
 		return null;
 	}
 	const x = chartXAtMs(ms, startMs, spanMs, padL, plotW);
-	const obsc = obscurationAtMs(ms, series);
-	if (obsc === null) {
+	const mag = magnitudeAtMs(ms, series);
+	if (mag === null) {
 		return null;
 	}
 	const y =
-		padT +
-		(height - padT - padB) * (1 - (obsc - minObsc) / (maxObsc - minObsc));
+		padT + (height - padT - padB) * (1 - (mag - minMag) / (maxMag - minMag));
 	const exact = points.find((p) => p.ms === ms);
 	if (exact) {
 		return { x: exact.x, y: exact.y };
@@ -141,32 +144,34 @@ function pointAtIso(
 	return { x, y };
 }
 
-function obscurationAtMs(
-	ms: number,
-	series: ObscurationPoint[],
-): number | null {
+function magnitudeAtMs(ms: number, series: MagnitudePoint[]): number | null {
 	if (series.length === 0) {
 		return null;
 	}
+	const last = series[series.length - 1];
+	if (!last) {
+		return null;
+	}
 	const firstMs = Date.parse(series[0].iso);
-	const lastMs = Date.parse(series.at(-1)!.iso);
+	const lastMs = Date.parse(last.iso);
 	if (ms <= firstMs) {
-		return clamp01(series[0].obscuration);
+		return Math.max(0, series[0].umbralMagnitude);
 	}
 	if (ms >= lastMs) {
-		return clamp01(series.at(-1)!.obscuration);
+		return Math.max(0, last.umbralMagnitude);
 	}
 	for (let i = 0; i < series.length - 1; i++) {
 		const aMs = Date.parse(series[i].iso);
 		const bMs = Date.parse(series[i + 1].iso);
 		if (ms >= aMs && ms <= bMs) {
 			if (bMs === aMs) {
-				return clamp01(series[i].obscuration);
+				return Math.max(0, series[i].umbralMagnitude);
 			}
 			const t = (ms - aMs) / (bMs - aMs);
-			return clamp01(
-				series[i].obscuration +
-					t * (series[i + 1].obscuration - series[i].obscuration),
+			return Math.max(
+				0,
+				series[i].umbralMagnitude +
+					t * (series[i + 1].umbralMagnitude - series[i].umbralMagnitude),
 			);
 		}
 	}
@@ -179,9 +184,9 @@ function obscurationAtMs(
 		viewBox="0 0 {width} {height}"
 		class="h-auto w-full"
 		role="img"
-		aria-label={m.obscurationAria()}
+		aria-label={m.umbralMagChartAria()}
 	>
-		<title>{m.obscurationTitle()}</title>
+		<title>{m.umbralMagChartTitle()}</title>
 		{#each chart.timeTicks as tick (tick.ms)}
 			<line
 				x1={tick.x}
@@ -259,23 +264,23 @@ function obscurationAtMs(
 			y={padT + 4}
 			class="fill-gray-500 text-[9px] dark:fill-gray-400"
 		>
-			100%
+			{chart.maxMag.toFixed(1)}
 		</text>
 		<text
 			x={4}
 			y={height - padB}
 			class="fill-gray-500 text-[9px] dark:fill-gray-400"
 		>
-			0%
+			0
 		</text>
 	</svg>
 	{#if chart.hasCentral}
 		<p class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">
-			{m.chartContactLegend({ centralWord: chart.centralWord })}
+			{m.lunarChartLegend()}
 		</p>
 	{/if}
 {:else}
 	<p class="text-sm text-gray-500 dark:text-gray-400">
-		{m.noObscurationSeries()}
+		{m.noUmbralMagSeries()}
 	</p>
 {/if}

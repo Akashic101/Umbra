@@ -4,11 +4,16 @@ export const CHART_THIRTY_MIN_MS = 30 * 60 * 1000;
 
 /** 30-minute UTC boundaries strictly between start and end (skips edges within 5 min). */
 export function thirtyMinuteTickMs(startMs: number, endMs: number): number[] {
-	if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+	if (
+		!Number.isFinite(startMs) ||
+		!Number.isFinite(endMs) ||
+		endMs <= startMs
+	) {
 		return [];
 	}
 	const edgePad = 5 * 60 * 1000;
-	const first = Math.ceil((startMs + 1) / CHART_THIRTY_MIN_MS) * CHART_THIRTY_MIN_MS;
+	const first =
+		Math.ceil((startMs + 1) / CHART_THIRTY_MIN_MS) * CHART_THIRTY_MIN_MS;
 	const ticks: number[] = [];
 	for (let t = first; t < endMs; t += CHART_THIRTY_MIN_MS) {
 		if (t - startMs < edgePad || endMs - t < edgePad) {
@@ -40,6 +45,15 @@ export function formatChartHm(ms: number, timeZone?: string): string {
 
 export type ContactMarkerKey = "c1" | "c2" | "max" | "c3" | "c4";
 
+export type LunarChartMarkerKey =
+	| "p1"
+	| "u1"
+	| "u2"
+	| "max"
+	| "u3"
+	| "u4"
+	| "p4";
+
 export function contactMarkerDefs(contacts: {
 	c1: string | null;
 	c2: string | null;
@@ -53,5 +67,25 @@ export function contactMarkerDefs(contacts: {
 		{ key: "max", iso: contacts.max, label: "Max" },
 		{ key: "c3", iso: contacts.c3, label: "C3" },
 		{ key: "c4", iso: contacts.c4, label: "C4" },
+	];
+}
+
+export function lunarContactMarkerDefs(contacts: {
+	p1: string | null;
+	u1: string | null;
+	u2: string | null;
+	max: string | null;
+	u3: string | null;
+	u4: string | null;
+	p4: string | null;
+}): { key: LunarChartMarkerKey; iso: string | null; label: string }[] {
+	return [
+		{ key: "p1", iso: contacts.p1, label: "P1" },
+		{ key: "u1", iso: contacts.u1, label: "U1" },
+		{ key: "u2", iso: contacts.u2, label: "U2" },
+		{ key: "max", iso: contacts.max, label: "Max" },
+		{ key: "u3", iso: contacts.u3, label: "U3" },
+		{ key: "u4", iso: contacts.u4, label: "U4" },
+		{ key: "p4", iso: contacts.p4, label: "P4" },
 	];
 }

@@ -1,4 +1,10 @@
+export type AppEclipseKind = "solar" | "lunar";
+
 export type EclipseType = "partial" | "total" | "annular" | "hybrid";
+
+export type LunarEclipseType = "penumbral" | "partial" | "total";
+
+export type LunarLocalType = LunarEclipseType | "none";
 
 export type LocalEclipseType = "none" | "partial" | "total" | "annular";
 
@@ -168,6 +174,131 @@ export const ALL_ECLIPSE_TYPES: EclipseType[] = [
 	"hybrid",
 	"partial",
 ];
+
+export const ALL_LUNAR_ECLIPSE_TYPES: LunarEclipseType[] = [
+	"penumbral",
+	"partial",
+	"total",
+];
+
+export type LunarEclipseFilters = {
+	types: LunarEclipseType[];
+	visibleHere: boolean;
+	yearFrom: number;
+	yearTo: number;
+	dateFrom: string | null;
+	dateTo: string | null;
+	minUmbralDurationSeconds: number;
+	minUmbralMagnitude: number;
+};
+
+export const DEFAULT_LUNAR_FILTERS: LunarEclipseFilters = {
+	types: [...ALL_LUNAR_ECLIPSE_TYPES],
+	visibleHere: false,
+	yearFrom: CATALOG_YEAR_MIN,
+	yearTo: CATALOG_YEAR_MAX,
+	dateFrom: null,
+	dateTo: null,
+	minUmbralDurationSeconds: 0,
+	minUmbralMagnitude: 0,
+};
+
+export type LunarContactKey = "p1" | "u1" | "u2" | "max" | "u3" | "u4" | "p4";
+
+export type LunarContactTimes = {
+	p1: string | null;
+	u1: string | null;
+	u2: string | null;
+	max: string | null;
+	u3: string | null;
+	u4: string | null;
+	p4: string | null;
+};
+
+export type LunarCatalogEntry = {
+	date: string;
+	type: LunarEclipseType;
+	saros: number;
+	gamma: number;
+	penumbralMagnitude: number;
+	umbralMagnitude: number;
+	penumbralDurationSeconds: number;
+	umbralDurationSeconds: number;
+	totalDurationSeconds: number;
+	zenithLat: number;
+	zenithLon: number;
+	greatestIso: string;
+	contacts: LunarContactTimes;
+};
+
+export type LunarLocalSummary = {
+	date: string;
+	visible: boolean;
+	localType: LunarLocalType;
+	penumbralMagnitude: number;
+	umbralMagnitude: number;
+	durationSeconds: number;
+	umbralDurationSeconds: number;
+	totalDurationSeconds: number;
+};
+
+export type LunarLocalCircumstances = LunarLocalSummary & {
+	contacts: LunarContactTimes;
+};
+
+export type LunarCircumstanceSample = {
+	iso: string;
+	altitudeDeg: number;
+	azimuthDeg: number;
+	umbralMagnitude: number;
+	penumbralMagnitude: number;
+	localType: LunarLocalType;
+};
+
+export type LunarContactMoon = {
+	key: LunarContactKey;
+	moonUp: boolean;
+};
+
+export type LunarGlobalFacts = {
+	type: LunarEclipseType;
+	saros: number;
+	gamma: number;
+	penumbralMagnitude: number;
+	umbralMagnitude: number;
+	penumbralDurationSeconds: number;
+	umbralDurationSeconds: number;
+	totalDurationSeconds: number;
+	zenithLat: number;
+	zenithLon: number;
+	greatestIso: string;
+};
+
+export type LunarObserverDetails = {
+	date: string;
+	location: ObserverLocation;
+	visible: boolean;
+	localType: LunarLocalType;
+	penumbralMagnitude: number;
+	umbralMagnitude: number;
+	durationSeconds: number;
+	umbralDurationSeconds: number;
+	totalDurationSeconds: number;
+	moonriseIso: string | null;
+	moonsetIso: string | null;
+	lookDirectionCode: string | null;
+	lookAzimuthDeg: number | null;
+	lookAltitudeDeg: number | null;
+	series: LunarCircumstanceSample[];
+	contactMoon: LunarContactMoon[];
+	global: LunarGlobalFacts;
+	contacts: LunarContactTimes;
+};
+
+export type PersistedLunarState = {
+	selectedDate: string | null;
+	filters: LunarEclipseFilters;
+};
 
 export const DEFAULT_FILTERS: EclipseFilters = {
 	types: [...ALL_ECLIPSE_TYPES],
