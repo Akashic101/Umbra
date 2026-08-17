@@ -3,19 +3,23 @@ import type { CircleMarker, LayerGroup, Map as LeafletMap } from "leaflet";
 import type { Attachment } from "svelte/attachments";
 import { toLeafletRing } from "$lib/map/geo";
 import { m } from "$lib/paraglide/messages.js";
+import { formatCoordinates } from "$lib/services/geocoding";
 import type { EclipsePaths, ObserverLocation } from "$lib/types";
 import "leaflet/dist/leaflet.css";
 
 let {
 	location = null,
 	paths = null,
+	extras = [],
 }: {
 	location?: ObserverLocation | null;
 	paths?: EclipsePaths | null;
+	extras?: ObserverLocation[];
 } = $props();
 
 let map: LeafletMap | undefined;
 let marker: CircleMarker | undefined;
+let extraMarkers: CircleMarker[] = [];
 let overlay: LayerGroup | undefined;
 let leaflet: typeof import("leaflet") | undefined;
 
@@ -41,6 +45,7 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 		}).addTo(map);
 		overlay = L.layerGroup().addTo(map);
 		syncMarker();
+		syncExtraMarkers();
 		syncPaths();
 		map.invalidateSize();
 		resizeObserver = new ResizeObserver(() => map?.invalidateSize());
@@ -52,6 +57,7 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 		map?.remove();
 		map = undefined;
 		marker = undefined;
+		extraMarkers = [];
 		overlay = undefined;
 		leaflet = undefined;
 	};
@@ -60,6 +66,12 @@ const mapAttachment: Attachment<HTMLDivElement> = (node) => {
 $effect(() => {
 	location;
 	syncMarker();
+	fitView();
+});
+
+$effect(() => {
+	extras;
+	syncExtraMarkers();
 	fitView();
 });
 
@@ -79,6 +91,7 @@ function syncMarker(): void {
 		return;
 	}
 	const latlng: [number, number] = [location.lat, location.lon];
+	const label = location.label || m.compareYou();
 	if (!marker) {
 		marker = leaflet
 			.circleMarker(latlng, {
@@ -88,10 +101,38 @@ function syncMarker(): void {
 				fillOpacity: 1,
 				weight: 2,
 			})
+			.bindTooltip(label, { direction: "top" })
 			.addTo(map);
 	} else {
 		marker.setLatLng(latlng);
+		marker.setTooltipContent(label);
 	}
+}
+
+function placeLabel(place: ObserverLocation): string {
+	return place.label || formatCoordinates(place.lat, place.lon);
+}
+
+function syncExtraMarkers(): void {
+	const currentMap = map;
+	const L = leaflet;
+	if (!currentMap || !L) {
+		return;
+	}
+	for (const extraMarker of extraMarkers) {
+		extraMarker.remove();
+	}
+	extraMarkers = extras.map((place) =>
+		L.circleMarker([place.lat, place.lon], {
+			radius: 6,
+			color: "#b45309",
+			fillColor: "#f59e0b",
+			fillOpacity: 1,
+			weight: 2,
+		})
+			.bindTooltip(placeLabel(place), { direction: "top" })
+			.addTo(currentMap),
+	);
 }
 
 function syncPaths(): void {
@@ -134,6 +175,17 @@ function syncPaths(): void {
 
 function fitView(): void {
 	if (!map || !leaflet) {
+		return;
+	}
+	const extraPoints: [number, number][] = extras.map((place) => [
+		place.lat,
+		place.lon,
+	]);
+	if (location && extraPoints.length > 0) {
+		map.fitBounds([[location.lat, location.lon], ...extraPoints], {
+			padding: [28, 28],
+			maxZoom: 8,
+		});
 		return;
 	}
 	// Zoom around the observer so the preview is useful locally; full penumbra

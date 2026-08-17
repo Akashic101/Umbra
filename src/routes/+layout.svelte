@@ -1,26 +1,14 @@
 <script lang="ts">
 import "./layout.css";
-import { NavBrand, Navbar } from "flowbite-svelte";
 import { goto } from "$app/navigation";
-import { page } from "$app/state";
 import favicon from "$lib/assets/favicon.svg";
-import FavoritesMenu from "$lib/components/FavoritesMenu.svelte";
+import AppNav from "$lib/components/AppNav.svelte";
 import { isTauri, pathFromDeepLink } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
 import { getLocale, getTextDirection } from "$lib/paraglide/runtime";
 import { applyTheme, readThemePreference } from "$lib/theme";
 
 let { children } = $props();
-
-const path = $derived(page.url.pathname);
-const isLunar = $derived(path === "/lunar" || path.startsWith("/lunar/"));
-const isDictionary = $derived(
-	path === "/dictionary" || path.startsWith("/dictionary/"),
-);
-const isSettings = $derived(
-	path === "/settings" || path.startsWith("/settings/"),
-);
-const isSolar = $derived(path === "/" || path.startsWith("/details"));
 
 // Prerendered HTML uses the base locale; correct lang/dir after the
 // cookie, localStorage, or browser language is known.
@@ -108,45 +96,7 @@ $effect(() => {
 <div
 	class="flex h-[100dvh] flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
 >
-	<Navbar fluid class="border-b border-gray-200 dark:border-gray-700">
-		<NavBrand href="/">
-			<img src={favicon} alt="" class="me-2 h-6 w-6">
-			<span class="text-lg font-semibold">{m.brandName()}</span>
-		</NavBrand>
-		<nav class="ms-4 flex items-center gap-3 text-sm">
-			<a
-				href="/"
-				class="text-gray-700 hover:underline dark:text-gray-200"
-				class:font-semibold={isSolar}
-			>
-				{m.navSolar()}
-			</a>
-			<a
-				href="/lunar"
-				class="text-gray-700 hover:underline dark:text-gray-200"
-				class:font-semibold={isLunar}
-			>
-				{m.navLunar()}
-			</a>
-			<a
-				href="/dictionary"
-				class="text-gray-700 hover:underline dark:text-gray-200"
-				class:font-semibold={isDictionary}
-			>
-				{m.navDictionary()}
-			</a>
-			<a
-				href="/settings"
-				class="text-gray-700 hover:underline dark:text-gray-200"
-				class:font-semibold={isSettings}
-			>
-				{m.navSettings()}
-			</a>
-		</nav>
-		<div class="flex items-center gap-2">
-			<FavoritesMenu />
-		</div>
-	</Navbar>
+	<AppNav />
 	<div class="min-h-0 flex-1">
 		{@render children()}
 	</div>

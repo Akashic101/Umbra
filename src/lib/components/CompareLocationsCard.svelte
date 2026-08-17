@@ -54,9 +54,11 @@ type DisplayRow = {
 let {
 	date,
 	primary,
+	onCompareLocations,
 }: {
 	date: string;
 	primary: ObserverEclipseDetails;
+	onCompareLocations?: (locations: ObserverLocation[]) => void;
 } = $props();
 
 let extras = $state<ExtraRow[]>([]);
@@ -157,12 +159,17 @@ $effect(() => {
 	primary.location.lon;
 	untrack(() => {
 		addToken += 1;
-		extras = [];
+		setExtras([]);
 		searchQuery = "";
 		searchResults = [];
 		searchError = null;
 	});
 });
+
+function setExtras(next: ExtraRow[]): void {
+	extras = next;
+	onCompareLocations?.(next.map((row) => row.location));
+}
 
 function placeLabel(location: ObserverLocation): string {
 	return location.label || formatCoordinates(location.lat, location.lon);
@@ -294,10 +301,10 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 
 	const id = crypto.randomUUID();
 	const token = addToken;
-	extras = [
+	setExtras([
 		...extras,
 		{ id, location, details: null, loading: true, error: null },
-	];
+	]);
 	searchQuery = "";
 	searchResults = [];
 	searchError = null;
@@ -315,29 +322,35 @@ async function addLocation(location: ObserverLocation): Promise<void> {
 		if (token !== addToken) {
 			return;
 		}
-		extras = extras.map((row) =>
-			row.id === id
-				? {
-						...row,
-						location: resolved,
-						details,
-						loading: false,
-						error: null,
-					}
-				: row,
+		setExtras(
+			extras.map((row) =>
+				row.id === id
+					? {
+							...row,
+							location: resolved,
+							details,
+							loading: false,
+							error: null,
+						}
+					: row,
+			),
 		);
 	} catch {
 		if (token !== addToken) {
 			return;
 		}
-		extras = extras.map((row) =>
-			row.id === id ? { ...row, loading: false, error: m.compareError() } : row,
+		setExtras(
+			extras.map((row) =>
+				row.id === id
+					? { ...row, loading: false, error: m.compareError() }
+					: row,
+			),
 		);
 	}
 }
 
 function removeExtra(id: string): void {
-	extras = extras.filter((row) => row.id !== id);
+	setExtras(extras.filter((row) => row.id !== id));
 }
 </script>
 

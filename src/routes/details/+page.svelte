@@ -35,10 +35,15 @@ import {
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
-import type { EclipsePaths, ObserverEclipseDetails } from "$lib/types";
+import type {
+	EclipsePaths,
+	ObserverEclipseDetails,
+	ObserverLocation,
+} from "$lib/types";
 
 let details = $state.raw<ObserverEclipseDetails | null>(null);
 let paths = $state.raw<EclipsePaths | null>(null);
+let compareLocations = $state.raw<ObserverLocation[]>([]);
 let loading = $state(true);
 let error = $state<string | null>(null);
 let loadToken = 0;
@@ -416,7 +421,13 @@ async function load(search: string): Promise<void> {
 						{/if}
 					</Card>
 
-					<CompareLocationsCard date={details.date} primary={details} />
+					<CompareLocationsCard
+						date={details.date}
+						primary={details}
+						onCompareLocations={(locations) => {
+							compareLocations = locations;
+						}}
+					/>
 
 					<StagesCard
 						contacts={details.contacts}
@@ -442,7 +453,11 @@ async function load(search: string): Promise<void> {
 						<p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
 							{m.pathPreviewHint()}
 						</p>
-						<PathPreviewMap location={details.location} {paths} />
+						<PathPreviewMap
+							location={details.location}
+							extras={compareLocations}
+							{paths}
+						/>
 					</Card>
 
 					<Card class="w-full p-2 max-w-none col-span-2" size="xl">
