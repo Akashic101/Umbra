@@ -23,6 +23,7 @@ type Callback = extern "C" fn(i32, f64, f64, f64);
 extern "C" {
 	fn umbra_request_location(callback: Callback);
 	fn umbra_ensure_location_permission();
+	fn umbra_location_status() -> i32;
 }
 
 static SENDER: Mutex<Option<Sender<LocationFix>>> = Mutex::new(None);
@@ -43,6 +44,15 @@ extern "C" fn on_location(code: i32, lat: f64, lon: f64, alt: f64) {
 pub fn ensure_permission() {
 	unsafe {
 		umbra_ensure_location_permission();
+	}
+}
+
+pub fn location_status() -> &'static str {
+	let status = unsafe { umbra_location_status() };
+	match status {
+		0 => "prompt",
+		3 | 4 => "granted",
+		_ => "denied",
 	}
 }
 

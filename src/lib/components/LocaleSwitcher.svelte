@@ -3,13 +3,16 @@ import { Button, ButtonGroup } from "flowbite-svelte";
 import { m } from "$lib/paraglide/messages.js";
 import { getLocale, locales, setLocale } from "$lib/paraglide/runtime";
 
-const shortLabels: Record<string, string> = { en: "EN", de: "DE" };
-const fullLabels: Record<string, string> = {
-	en: m.localeEn(),
-	de: m.localeDe(),
-};
+let { variant = "short" }: { variant?: "short" | "full" } = $props();
 
-const current = getLocale();
+const shortLabels: Record<string, string> = { en: "EN", de: "DE" };
+const current = $derived(getLocale());
+const labels = $derived.by(() => {
+	current;
+	return variant === "full"
+		? { en: m.localeEn(), de: m.localeDe() }
+		: shortLabels;
+});
 </script>
 
 <ButtonGroup aria-label={m.languagesAria()}>
@@ -17,10 +20,10 @@ const current = getLocale();
 		<Button
 			color={locale === current ? "primary" : "alternative"}
 			aria-current={locale === current ? "true" : undefined}
-			title={fullLabels[locale] ?? locale}
+			title={locale === "en" ? m.localeEn() : m.localeDe()}
 			onclick={() => setLocale(locale)}
 		>
-			{shortLabels[locale] ?? locale.toUpperCase()}
+			{labels[locale] ?? locale.toUpperCase()}
 		</Button>
 	{/each}
 </ButtonGroup>

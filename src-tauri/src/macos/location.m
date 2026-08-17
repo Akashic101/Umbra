@@ -125,3 +125,21 @@ void umbra_ensure_location_permission(void) {
 		[umbraLocator() ensurePermission];
 	});
 }
+
+static int32_t umbraReadStatus(void) {
+	if (![CLLocationManager locationServicesEnabled]) {
+		return 2;
+	}
+	return (int32_t)umbraLocator().manager.authorizationStatus;
+}
+
+int32_t umbra_location_status(void) {
+	if ([NSThread isMainThread]) {
+		return umbraReadStatus();
+	}
+	__block int32_t status = 0;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		status = umbraReadStatus();
+	});
+	return status;
+}

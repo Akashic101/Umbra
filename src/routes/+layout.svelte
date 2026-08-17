@@ -1,14 +1,14 @@
 <script lang="ts">
 import "./layout.css";
-import { DarkMode, NavBrand, Navbar } from "flowbite-svelte";
+import { NavBrand, Navbar } from "flowbite-svelte";
 import { goto } from "$app/navigation";
 import { page } from "$app/state";
 import favicon from "$lib/assets/favicon.svg";
 import FavoritesMenu from "$lib/components/FavoritesMenu.svelte";
-import LocaleSwitcher from "$lib/components/LocaleSwitcher.svelte";
 import { isTauri, pathFromDeepLink } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
 import { getLocale, getTextDirection } from "$lib/paraglide/runtime";
+import { applyTheme, readThemePreference } from "$lib/theme";
 
 let { children } = $props();
 
@@ -16,6 +16,9 @@ const path = $derived(page.url.pathname);
 const isLunar = $derived(path === "/lunar" || path.startsWith("/lunar/"));
 const isDictionary = $derived(
 	path === "/dictionary" || path.startsWith("/dictionary/"),
+);
+const isSettings = $derived(
+	path === "/settings" || path.startsWith("/settings/"),
 );
 const isSolar = $derived(path === "/" || path.startsWith("/details"));
 
@@ -25,6 +28,18 @@ $effect(() => {
 	const locale = getLocale();
 	document.documentElement.lang = locale;
 	document.documentElement.dir = getTextDirection(locale);
+});
+
+$effect(() => {
+	applyTheme(readThemePreference());
+	const media = window.matchMedia("(prefers-color-scheme: dark)");
+	const onChange = () => {
+		if (readThemePreference() === "system") {
+			applyTheme("system");
+		}
+	};
+	media.addEventListener("change", onChange);
+	return () => media.removeEventListener("change", onChange);
 });
 
 $effect(() => {
@@ -120,11 +135,16 @@ $effect(() => {
 			>
 				{m.navDictionary()}
 			</a>
+			<a
+				href="/settings"
+				class="text-gray-700 hover:underline dark:text-gray-200"
+				class:font-semibold={isSettings}
+			>
+				{m.navSettings()}
+			</a>
 		</nav>
 		<div class="flex items-center gap-2">
 			<FavoritesMenu />
-			<LocaleSwitcher />
-			<DarkMode />
 		</div>
 	</Navbar>
 	<div class="min-h-0 flex-1">

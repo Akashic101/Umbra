@@ -45,6 +45,16 @@ struct GeoPos {
 }
 
 #[tauri::command]
+fn macos_location_status() -> Result<&'static str, String> {
+	#[cfg(target_os = "macos")]
+	{
+		return Ok(macos_location::location_status());
+	}
+	#[cfg(not(target_os = "macos"))]
+	Err("macOS location is not available on this platform".into())
+}
+
+#[tauri::command]
 async fn get_macos_location() -> Result<GeoPos, String> {
 	#[cfg(target_os = "macos")]
 	{
@@ -70,7 +80,8 @@ pub fn run() {
 		.plugin(tauri_plugin_deep_link::init())
 		.invoke_handler(tauri::generate_handler![
 			open_location_settings,
-			get_macos_location
+			get_macos_location,
+			macos_location_status
 		])
 		.setup(|app| {
 			if cfg!(debug_assertions) {

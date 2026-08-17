@@ -124,7 +124,7 @@ export class AppState {
 		await this.refreshForLocation();
 	}
 
-	async useGps(): Promise<void> {
+	async useGps(options: { openSettingsOnFail?: boolean } = {}): Promise<void> {
 		this.error = null;
 		this.locationPermissionDenied = false;
 		try {
@@ -147,7 +147,12 @@ export class AppState {
 					? error.message
 					: m.errorUnableGps();
 			const unavailable = error instanceof GeolocationError && error.code === 2;
-			if ((denied || unavailable) && locationSettingsUrl()) {
+			const openSettingsOnFail = options.openSettingsOnFail ?? true;
+			if (
+				openSettingsOnFail &&
+				(denied || unavailable) &&
+				locationSettingsUrl()
+			) {
 				void openLocationSettings();
 			}
 		}
@@ -379,6 +384,11 @@ export class AppState {
 
 	removeFavorite(id: string): void {
 		this.favorites = this.favorites.filter((item) => item.id !== id);
+		favoritesService.save(this.favorites);
+	}
+
+	clearFavorites(): void {
+		this.favorites = [];
 		favoritesService.save(this.favorites);
 	}
 }

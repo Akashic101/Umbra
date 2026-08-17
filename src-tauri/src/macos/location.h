@@ -15,6 +15,7 @@ typedef void (*UmbraLocationCallback)(
 
 void umbra_request_location(UmbraLocationCallback callback);
 void umbra_ensure_location_permission(void);
+int32_t umbra_location_status(void);
 
 #ifdef __cplusplus
 }
