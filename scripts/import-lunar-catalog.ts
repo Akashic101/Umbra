@@ -3,7 +3,7 @@
  * (NASA GSFC 5MKLEcatalog.txt) into a 1900–2100 JSON slice.
  *
  * Usage:
- *   npx tsx scripts/import-lunar-catalog.ts [path-or-url]
+ *   bun scripts/import-lunar-catalog.ts [path-or-url]
  *
  * Default source: https://eclipse.gsfc.nasa.gov/5MCLE/5MKLEcatalog.txt
  */

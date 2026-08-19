@@ -82,7 +82,7 @@ All external API calls are free and require no API keys.
 
 ## Prerequisites
 
-- **Node.js** (v20+)
+- **Bun** (v1.3.14)
 - **Rust** (1.77.2+ via [rustup](https://rustup.rs/))
 - Platform WebView SDK:
   - macOS: WebKit (included with macOS)
@@ -95,7 +95,7 @@ All external API calls are free and require no API keys.
 ## Running locally
 
 ```sh
-npm install
+bun install
 ```
 
 
@@ -103,7 +103,7 @@ npm install
 ### Web dev server
 
 ```sh
-npm run dev
+bun run dev
 ```
 
 Opens a Vite dev server at `http://localhost:5173`. Hot module replacement is active.
@@ -111,7 +111,7 @@ Opens a Vite dev server at `http://localhost:5173`. Hot module replacement is ac
 ### Native app (Tauri)
 
 ```sh
-npm run tauri:dev
+bun run tauri:dev
 ```
 
 This launches the Tauri desktop app with a dev server backend. On macOS, grant Location permission to the **terminal** process that launched the command.
@@ -121,11 +121,11 @@ This launches the Tauri desktop app with a dev server backend. On macOS, grant L
 After installing Xcode or Android Studio:
 
 ```sh
-npx tauri ios init
-npx tauri ios dev
+bunx tauri ios init
+bunx tauri ios dev
 
-npx tauri android init
-npx tauri android dev
+bunx tauri android init
+bunx tauri android dev
 ```
 
 
@@ -137,7 +137,7 @@ npx tauri android dev
 ### Desktop installers
 
 ```sh
-npm run tauri:build
+bun run tauri:build
 ```
 
 Produces platform-specific installers (`.dmg` on macOS, `.msi`/`.exe` on Windows, `.deb`/`.AppImage` on Linux).
@@ -145,8 +145,8 @@ Produces platform-specific installers (`.dmg` on macOS, `.msi`/`.exe` on Windows
 ### Static web SPA
 
 ```sh
-npm run build
-npm run preview   # preview the output
+bun run build
+bun run preview   # preview the output
 ```
 
 Outputs to `build/` with a `200.html` fallback for SPA routing. Not a PWA — no service worker or install manifest. Prefer the native app for daily use.
@@ -156,17 +156,17 @@ Outputs to `build/` with a `200.html` fallback for SPA routing. Not a PWA — no
 
 | Command                | Purpose                                          |
 | ---------------------- | ------------------------------------------------ |
-| `npm run dev`          | Vite dev server (web)                            |
-| `npm run build`        | Production static build                          |
-| `npm run preview`      | Preview production build                         |
-| `npm run tauri:dev`    | Native app with dev server                       |
-| `npm run tauri:build`  | Build desktop installers                         |
-| `npm run check`        | Svelte + TypeScript type checking                |
-| `npm run lint`         | Biome lint                                       |
-| `npm run format`       | Biome auto-format                                |
-| `npm run test`         | Run unit tests (Vitest)                          |
-| `npm run knip`         | Dead code detection                              |
-| `npm run import:lunar` | Re-import lunar eclipse catalog from source data |
+| `bun run dev`          | Vite dev server (web)                            |
+| `bun run build`        | Production static build                          |
+| `bun run preview`      | Preview production build                         |
+| `bun run tauri:dev`    | Native app with dev server                       |
+| `bun run tauri:build`  | Build desktop installers                         |
+| `bun run check`        | Svelte + TypeScript type checking                |
+| `bun run lint`         | Biome lint                                       |
+| `bun run format`       | Biome auto-format                                |
+| `bun run test`         | Run unit tests (Vitest)                          |
+| `bun run knip`         | Dead code detection                              |
+| `bun run import:lunar` | Re-import lunar eclipse catalog from source data |
 
 
 

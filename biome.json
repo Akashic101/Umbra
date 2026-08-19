@@ -12,7 +12,7 @@
 			"!node_modules",
 			"!.svelte-kit",
 			"!build",
-			"!package-lock.json",
+			"!bun.lock",
 			"!src/lib/eclipse/lunar-catalog.json",
 			"!scripts/data",
 			"!src-tauri"
