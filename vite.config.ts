@@ -40,14 +40,21 @@ export default defineConfig({
 	},
 	test: {
 		expect: { requireAssertions: true },
+		coverage: {
+			provider: "v8",
+			include: ["src/lib/services/**/*.ts"],
+			exclude: ["src/lib/services/**/*.test.ts"],
+			thresholds: {
+				100: true,
+			},
+		},
 		projects: [
 			{
 				extends: "./vite.config.ts",
 				test: {
-					name: "server",
+					name: "services",
 					environment: "node",
-					include: ["src/**/*.{test,spec}.{js,ts}"],
-					exclude: ["src/**/*.svelte.{test,spec}.{js,ts}"],
+					include: ["src/lib/services/**/*.{test,spec}.{js,ts}"],
 				},
 			},
 		],

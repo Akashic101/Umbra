@@ -66,6 +66,15 @@ describe("nearestHourIndex", () => {
 	it("returns null for an empty series", () => {
 		expect(nearestHourIndex([], Date.parse("2026-08-20T15:00:00Z"))).toBe(null);
 	});
+
+	it("skips invalid hour timestamps", () => {
+		expect(
+			nearestHourIndex(
+				[Number.NaN, Date.parse("2026-08-20T15:00:00Z")],
+				Date.parse("2026-08-20T15:10:00Z"),
+			),
+		).toBe(1);
+	});
 });
 
 describe("open-meteo hour stamps", () => {
@@ -83,6 +92,10 @@ describe("open-meteo hour stamps", () => {
 		expect(forecastAvailableFromDate(Date.parse("2026-09-10T12:00:00Z"))).toBe(
 			"2026-08-25",
 		);
+	});
+
+	it("returns NaN for empty hour stamps", () => {
+		expect(parseOpenMeteoHour("")).toBeNaN();
 	});
 });
 
@@ -116,6 +129,65 @@ describe("mapHourlyToContacts", () => {
 			high: 2,
 		});
 		expect(samples[1]?.sample?.total).toBe(40);
+	});
+
+	it("returns null samples when no hour matches or totals are invalid", () => {
+		const samples = mapHourlyToContacts(
+			{
+				time: ["2026-08-20T14:00"],
+				cloud_cover: [null],
+			},
+			[
+				{
+					key: "far",
+					iso: "2026-08-20T20:00:00Z",
+					ms: Date.parse("2026-08-20T20:00:00Z"),
+				},
+				{
+					key: "bad-total",
+					iso: "2026-08-20T14:07:00Z",
+					ms: Date.parse("2026-08-20T14:07:00Z"),
+				},
+			],
+		);
+		expect(samples[0]?.sample).toBeNull();
+		expect(samples[1]?.sample).toBeNull();
+	});
+
+	it("clamps cloud layer percentages", () => {
+		const samples = mapHourlyToContacts(
+			{
+				time: ["2026-08-20T14:00"],
+				cloud_cover: [150],
+				cloud_cover_low: [-5],
+				cloud_cover_mid: [Number.NaN],
+				cloud_cover_high: [20],
+			},
+			[
+				{
+					key: "c1",
+					iso: "2026-08-20T14:07:00Z",
+					ms: Date.parse("2026-08-20T14:07:00Z"),
+				},
+			],
+		);
+		expect(samples[0]?.sample).toEqual({
+			total: 100,
+			low: 0,
+			mid: null,
+			high: 20,
+		});
+	});
+
+	it("handles missing hourly arrays", () => {
+		const samples = mapHourlyToContacts({}, [
+			{
+				key: "c1",
+				iso: "2026-08-20T14:07:00Z",
+				ms: Date.parse("2026-08-20T14:07:00Z"),
+			},
+		]);
+		expect(samples[0]?.sample).toBeNull();
 	});
 });
 
@@ -216,5 +288,109 @@ describe("createCloudService", () => {
 			{ nowMs: NOW },
 		);
 		expect(result).toEqual({ status: "unavailable" });
+	});
+
+	it("returns unavailable for invalid coordinates or empty contacts", async () => {
+		const service = createCloudService({
+			getJson: async () => ({}),
+		});
+		await expect(
+			service.getAtContacts(Number.NaN, 11, [{ key: "c1", iso: "2026-08-20T14:07:00Z" }], {
+				nowMs: NOW,
+			}),
+		).resolves.toEqual({ status: "unavailable" });
+		await expect(
+			service.getAtContacts(48.14, 200, [{ key: "c1", iso: "2026-08-20T14:07:00Z" }], {
+				nowMs: NOW,
+			}),
+		).resolves.toEqual({ status: "unavailable" });
+		await expect(
+			service.getAtContacts(48.14, 11.58, [{ key: "c1", iso: null }], { nowMs: NOW }),
+		).resolves.toEqual({ status: "unavailable" });
+	});
+
+	it("skips invalid contact timestamps while fetching valid ones", async () => {
+		const service = createCloudService({
+			getJson: async () => ({
+				hourly: {
+					time: ["2026-08-20T14:00"],
+					cloud_cover: [18],
+				},
+			}),
+		});
+		await expect(
+			service.getAtContacts(
+				48.14,
+				11.58,
+				[
+					{ key: "bad", iso: "not-a-date" },
+					{ key: "max", iso: "2026-08-20T14:07:00Z" },
+				],
+				{ nowMs: NOW },
+			),
+		).resolves.toMatchObject({ status: "ok" });
+	});
+
+	it("returns too-old for pre-1940 events", async () => {
+		const service = createCloudService({
+			getJson: async () => ({}),
+		});
+		await expect(
+			service.getAtContacts(
+				48.14,
+				11.58,
+				[{ key: "c1", iso: "1939-06-01T12:00:00Z" }],
+				{ nowMs: NOW },
+			),
+		).resolves.toEqual({ status: "too-old" });
+	});
+
+	it("returns unavailable when the API returns no hourly data", async () => {
+		const service = createCloudService({
+			getJson: async () => ({ hourly: { time: [] } }),
+		});
+		await expect(
+			service.getAtContacts(
+				48.14,
+				11.58,
+				[{ key: "max", iso: "2026-08-20T14:07:00Z" }],
+				{ nowMs: NOW },
+			),
+		).resolves.toEqual({ status: "unavailable" });
+	});
+
+	it("reuses cached responses for identical requests", async () => {
+		let calls = 0;
+		const service = createCloudService({
+			getJson: async () => {
+				calls += 1;
+				return {
+					hourly: {
+						time: ["2026-08-20T14:00"],
+						cloud_cover: [18],
+					},
+				};
+			},
+		});
+		const contacts = [{ key: "max", iso: "2026-08-20T14:07:00Z" }];
+		await service.getAtContacts(48.14, 11.58, contacts, { nowMs: NOW });
+		await service.getAtContacts(48.14, 11.58, contacts, { nowMs: NOW });
+		expect(calls).toBe(1);
+	});
+
+	it("uses the current time when nowMs is omitted", async () => {
+		const service = createCloudService({
+			getJson: async () => ({
+				hourly: {
+					time: [new Date().toISOString().slice(0, 13).replace("T", "T") + ":00"],
+					cloud_cover: [12],
+				},
+			}),
+		});
+		const soon = new Date(Date.now() + 2 * DAY).toISOString();
+		const result = await service.getAtContacts(48.14, 11.58, [
+			{ key: "max", iso: soon },
+		]);
+		expect(result.status).toBe("ok");
 	});
 });

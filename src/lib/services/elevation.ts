@@ -39,9 +39,6 @@ export function createElevationService(
 	const fetchFn = deps.fetch;
 
 	async function fetchChunk(points: LatLon[]): Promise<(number | null)[]> {
-		if (!points.length) {
-			return [];
-		}
 		const url = new URL(ELEVATION_URL);
 		url.searchParams.set(
 			"latitude",

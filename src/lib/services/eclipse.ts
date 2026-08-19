@@ -87,10 +87,8 @@ export function createEclipseService(
 	}
 
 	function restartWorker(): void {
-		if (worker) {
-			worker.terminate();
-			worker = null;
-		}
+		worker?.terminate();
+		worker = null;
 		rejectAll(new Error("Eclipse worker restarted."));
 	}
 

@@ -117,9 +117,7 @@ async function nominatimFetch(
 	init?: RequestInit,
 ): Promise<Response> {
 	const headers = new Headers(init?.headers);
-	if (!headers.has("Accept")) {
-		headers.set("Accept", "application/json");
-	}
+	headers.set("Accept", headers.get("Accept") ?? "application/json");
 	if (isTauri()) {
 		headers.set("User-Agent", UMBRA_USER_AGENT);
 		const { fetch } = await import("@tauri-apps/plugin-http");

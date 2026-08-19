@@ -31,3 +31,6 @@ scripts/data
 # Tauri
 src-tauri/target
 src-tauri/gen/schemas
+
+# vitest coverage
+coverage

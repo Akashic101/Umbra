@@ -235,9 +235,6 @@ export function createCloudService(deps: CloudDeps = {}): CloudService {
 			}
 
 			const mode = classifyCloudRequest(minMs, maxMs, nowMs);
-			if (mode === "empty") {
-				return { status: "unavailable" };
-			}
 			if (mode === "too-far") {
 				return {
 					status: "too-far",
