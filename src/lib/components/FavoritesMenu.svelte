@@ -36,14 +36,16 @@ function remove(event: MouseEvent, id: string): void {
 	<Button
 		color="alternative"
 		size="sm"
-		class="gap-1.5"
+		class={[
+			"relative h-9 gap-1.5 !px-2.5",
+			!appState.favorites.length && "w-9 !px-0",
+		]}
 		aria-label={m.favoritesAria()}
 	>
 		<StarOutline class="h-4 w-4" />
-		<span class="hidden sm:inline">{m.favorites()}</span>
 		{#if appState.favorites.length}
 			<span
-				class="rounded-full bg-primary-100 px-1.5 text-xs tabular-nums text-primary-800 dark:bg-primary-900 dark:text-primary-200"
+				class="min-w-4 rounded-md bg-primary-100 px-1.5 py-0.5 text-center text-xs leading-none font-medium tabular-nums text-primary-800 dark:bg-primary-900 dark:text-primary-200"
 			>
 				{appState.favorites.length}
 			</span>
@@ -55,22 +57,28 @@ function remove(event: MouseEvent, id: string): void {
 		class="w-72 max-w-[min(18rem,calc(100vw-2rem))]"
 	>
 		<DropdownHeader>
-			<span class="block text-sm font-medium">{m.savedEclipses()}</span>
+			<span class="block text-sm font-semibold tracking-tight">
+				{m.savedEclipses()}
+			</span>
 		</DropdownHeader>
 		{#if appState.sortedFavorites.length === 0}
-			<div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+			<div
+				class="px-4 py-5 text-center text-sm text-gray-500 dark:text-gray-400"
+			>
 				{m.favoritesEmpty()}
 			</div>
 		{:else}
 			{#each appState.sortedFavorites as fav (fav.id)}
 				<DropdownItem
 					href={detailsHref(fav.date, fav.location)}
-					class="flex items-start gap-2 py-2"
+					class="flex items-start gap-2 py-2.5"
 				>
 					<span class="min-w-0 flex-1">
-						<span class="block font-medium">{formatIsoDate(fav.date)}</span>
+						<span class="block text-sm font-medium">
+							{formatIsoDate(fav.date)}
+						</span>
 						<span
-							class="block truncate text-xs text-gray-500 dark:text-gray-400"
+							class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400"
 							title={placeLabel(fav.location)}
 						>
 							{placeLabel(fav.location)}
@@ -78,7 +86,7 @@ function remove(event: MouseEvent, id: string): void {
 					</span>
 					<button
 						type="button"
-						class="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+						class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
 						aria-label={m.removeFavoriteAria()}
 						onclick={(event) => remove(event, fav.id)}
 					>
