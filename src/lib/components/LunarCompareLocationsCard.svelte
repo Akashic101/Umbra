@@ -20,6 +20,8 @@ import { eclipseService } from "$lib/services/eclipse";
 import { elevation } from "$lib/services/elevation";
 import { formatCoordinates, geocoding } from "$lib/services/geocoding";
 import type { LunarObserverDetails, ObserverLocation, Place } from "$lib/types";
+import { formatDistanceAway } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 
 const PRIMARY_ID = "primary";
 const MAX_EXTRAS = 2;
@@ -274,7 +276,7 @@ function toDisplayRow(input: {
 		distance:
 			distanceKm === null
 				? null
-				: m.compareDistanceKm({ km: String(distanceKm) }),
+				: formatDistanceAway(distanceKm, unitsState.distance),
 		type,
 		duration,
 		altitude,

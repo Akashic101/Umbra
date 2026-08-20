@@ -30,6 +30,8 @@ import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
 import type { LunarContactKey, LunarObserverDetails } from "$lib/types";
+import { formatElevation } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 
 let details = $state.raw<LunarObserverDetails | null>(null);
 let loading = $state(true);
@@ -185,9 +187,10 @@ async function load(search: string): Promise<void> {
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.elevation()}</dt>
 							<dd class="min-w-0 tabular-nums">
-								{m.elevationMeters({
-									meters: Math.round(details.location.height),
-								})}
+								{formatElevation(
+									details.location.height,
+									unitsState.distance,
+								)}
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.timezone()}</dt>
 							<dd class="min-w-0 break-words" title={timeZone}>{timeZone}</dd>

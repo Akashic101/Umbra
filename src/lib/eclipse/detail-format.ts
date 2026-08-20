@@ -9,6 +9,7 @@ import type {
 	LunarLocalType,
 	PathStatus,
 } from "$lib/types";
+import { formatPathWidth, type DistanceUnit } from "$lib/units";
 import type { EclipseNowPhase } from "./now-mode";
 
 export function formatPathStatus(status: PathStatus): string {
@@ -24,18 +25,11 @@ export function formatPathStatus(status: PathStatus): string {
 	}
 }
 
-export function formatPathWidthKm(meters: number): string {
-	if (!Number.isFinite(meters) || meters <= 0) {
-		return m.emDash();
-	}
-	const km = meters / 1000;
-	if (km >= 10) {
-		return m.pathWidthKm({ km: km.toFixed(0) });
-	}
-	if (km >= 1) {
-		return m.pathWidthKm({ km: km.toFixed(1) });
-	}
-	return m.pathWidthM({ meters: Math.round(meters) });
+export function formatPathWidthKm(
+	meters: number,
+	unit?: DistanceUnit,
+): string {
+	return formatPathWidth(meters, unit);
 }
 
 export function formatDaylightPhase(phase: DaylightPhase): string {

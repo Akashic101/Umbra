@@ -52,9 +52,13 @@ export default defineConfig({
 			{
 				extends: "./vite.config.ts",
 				test: {
-					name: "services",
+					name: "unit",
 					environment: "node",
-					include: ["src/lib/services/**/*.{test,spec}.{js,ts}"],
+					include: [
+						"src/lib/services/**/*.{test,spec}.{js,ts}",
+						"src/lib/units.test.ts",
+						"src/lib/theme.test.ts",
+					],
 				},
 			},
 		],

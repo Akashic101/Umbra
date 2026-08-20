@@ -35,6 +35,8 @@ import {
 import { m } from "$lib/paraglide/messages.js";
 import { eclipseService } from "$lib/services/eclipse";
 import { formatCoordinates } from "$lib/services/geocoding";
+import { formatElevation } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 import type {
 	EclipsePaths,
 	ObserverEclipseDetails,
@@ -201,9 +203,10 @@ async function load(search: string): Promise<void> {
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.elevation()}</dt>
 							<dd class="min-w-0 tabular-nums">
-								{m.elevationMeters({
-									meters: Math.round(details.location.height),
-								})}
+								{formatElevation(
+									details.location.height,
+									unitsState.distance,
+								)}
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.timezone()}</dt>
 							<dd class="min-w-0 break-words" title={timeZone}>{timeZone}</dd>
@@ -274,7 +277,10 @@ async function load(search: string): Promise<void> {
 							</dd>
 							<dt class="text-gray-500 dark:text-gray-400">{m.pathWidth()}</dt>
 							<dd class="tabular-nums">
-								{formatPathWidthKm(details.pathWidthMeters)}
+								{formatPathWidthKm(
+									details.pathWidthMeters,
+									unitsState.distance,
+								)}
 							</dd>
 						</dl>
 						<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -397,7 +403,10 @@ async function load(search: string): Promise<void> {
 										{m.pathWidth()}
 									</dt>
 									<dd class="tabular-nums">
-										{formatPathWidthKm(g.pathWidthMeters)}
+										{formatPathWidthKm(
+											g.pathWidthMeters,
+											unitsState.distance,
+										)}
 									</dd>
 								</div>
 								<div class="grid grid-cols-[auto_1fr] gap-x-4">

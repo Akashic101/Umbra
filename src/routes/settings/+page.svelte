@@ -20,14 +20,20 @@ import {
 	setTheme,
 	type ThemePreference,
 } from "$lib/theme";
+import type { DistanceUnit, TemperatureUnit } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 
 const themes: ThemePreference[] = ["light", "dark", "system"];
+const distanceUnits: DistanceUnit[] = ["metric", "imperial"];
+const temperatureUnits: TemperatureUnit[] = ["celsius", "fahrenheit"];
 const canOpenSettings = locationSettingsUrl() !== null;
 const locale = $derived(getLocale());
 
 let permission = $state<LocationPermissionState>("prompt");
 let requesting = $state(false);
 let theme = $state<ThemePreference>(readThemePreference());
+let distanceUnit = $state<DistanceUnit>(unitsState.distance);
+let temperatureUnit = $state<TemperatureUnit>(unitsState.temperature);
 
 const permissionLabel = $derived(
 	permission === "granted"
@@ -54,6 +60,22 @@ const themeLabels = $derived.by(() => {
 	};
 });
 
+const distanceLabels = $derived.by(() => {
+	locale;
+	return {
+		metric: m.settingsDistanceMetric(),
+		imperial: m.settingsDistanceImperial(),
+	};
+});
+
+const temperatureLabels = $derived.by(() => {
+	locale;
+	return {
+		celsius: m.settingsTemperatureCelsius(),
+		fahrenheit: m.settingsTemperatureFahrenheit(),
+	};
+});
+
 async function refreshPermission(): Promise<void> {
 	permission = await getLocationPermissionState();
 }
@@ -71,6 +93,16 @@ async function allowLocation(): Promise<void> {
 function chooseTheme(next: ThemePreference): void {
 	theme = next;
 	setTheme(next);
+}
+
+function chooseDistance(next: DistanceUnit): void {
+	distanceUnit = next;
+	unitsState.setDistance(next);
+}
+
+function chooseTemperature(next: TemperatureUnit): void {
+	temperatureUnit = next;
+	unitsState.setTemperature(next);
 }
 
 function detailsHref(
@@ -198,6 +230,60 @@ onMount(() => {
 				</Button>
 			{/each}
 		</ButtonGroup>
+	</section>
+
+	<section class="space-y-4" aria-labelledby="settings-units">
+		<div class="space-y-2">
+			<h2
+				id="settings-units"
+				class="text-lg font-semibold text-gray-900 dark:text-white"
+			>
+				{m.settingsUnitsHeading()}
+			</h2>
+			<p class="text-sm text-gray-600 dark:text-gray-300">
+				{m.settingsUnitsHint()}
+			</p>
+		</div>
+
+		<div class="space-y-2">
+			<h3 class="text-sm font-medium text-gray-900 dark:text-white">
+				{m.settingsDistanceHeading()}
+			</h3>
+			<p class="text-sm text-gray-600 dark:text-gray-300">
+				{m.settingsDistanceHint()}
+			</p>
+			<ButtonGroup aria-label={m.settingsDistanceAria()}>
+				{#each distanceUnits as value (value)}
+					<Button
+						color={distanceUnit === value ? "primary" : "alternative"}
+						aria-current={distanceUnit === value ? "true" : undefined}
+						onclick={() => chooseDistance(value)}
+					>
+						{distanceLabels[value]}
+					</Button>
+				{/each}
+			</ButtonGroup>
+		</div>
+
+		<div class="space-y-2">
+			<h3 class="text-sm font-medium text-gray-900 dark:text-white">
+				{m.settingsTemperatureHeading()}
+			</h3>
+			<p class="text-sm text-gray-600 dark:text-gray-300">
+				{m.settingsTemperatureHint()}
+			</p>
+			<ButtonGroup aria-label={m.settingsTemperatureAria()}>
+				{#each temperatureUnits as value (value)}
+					<Button
+						color={temperatureUnit === value ? "primary" : "alternative"}
+						aria-current={temperatureUnit === value ? "true" : undefined}
+						onclick={() => chooseTemperature(value)}
+					>
+						{temperatureLabels[value]}
+					</Button>
+				{/each}
+			</ButtonGroup>
+		</div>
 	</section>
 
 	<section class="space-y-3" aria-labelledby="settings-favorites">

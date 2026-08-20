@@ -26,6 +26,8 @@ import type {
 	ObserverLocation,
 	Place,
 } from "$lib/types";
+import { formatDistanceAway } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 
 const PRIMARY_ID = "primary";
 const MAX_EXTRAS = 2;
@@ -336,7 +338,7 @@ function toDisplayRow(input: {
 		distance:
 			distanceKm === null
 				? null
-				: m.compareDistanceKm({ km: String(distanceKm) }),
+				: formatDistanceAway(distanceKm, unitsState.distance),
 		type,
 		coverage,
 		duration,
