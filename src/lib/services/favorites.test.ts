@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	createFavoritesService,
+	favoriteDetailsHref,
 	favoriteId,
 	favoritesService,
 } from "./favorites";
@@ -44,6 +45,42 @@ describe("favoriteId", () => {
 			"2026-08-12|52.52000|13.40500|34",
 		);
 	});
+
+	it("prefixes lunar ids", () => {
+		expect(favoriteId("2026-08-12", berlin, "lunar")).toBe(
+			"lunar|2026-08-12|52.52000|13.40500|34",
+		);
+	});
+});
+
+describe("favoriteDetailsHref", () => {
+	it("links solar favorites to solar details", () => {
+		expect(
+			favoriteDetailsHref({
+				id: "x",
+				kind: "solar",
+				date: "2026-08-12",
+				location: berlin,
+				savedAt: "2026-01-01T00:00:00.000Z",
+			}),
+		).toBe(
+			"/details?date=2026-08-12&lat=52.52000&lon=13.40500&h=34&label=Berlin",
+		);
+	});
+
+	it("links lunar favorites to lunar details", () => {
+		expect(
+			favoriteDetailsHref({
+				id: "x",
+				kind: "lunar",
+				date: "2025-09-07",
+				location: berlin,
+				savedAt: "2026-01-01T00:00:00.000Z",
+			}),
+		).toBe(
+			"/lunar/details?date=2025-09-07&lat=52.52000&lon=13.40500&h=34&label=Berlin",
+		);
+	});
 });
 
 describe("createFavoritesService", () => {
@@ -52,6 +89,7 @@ describe("createFavoritesService", () => {
 		const favorites = [
 			{
 				id: "f1",
+				kind: "solar" as const,
 				date: "2026-08-12",
 				location: berlin,
 				savedAt: "2026-01-01T00:00:00.000Z",
@@ -97,6 +135,11 @@ describe("createFavoritesService", () => {
 						date: "2026-08-12",
 						location: { lat: 52.52, lon: 13.405 },
 					},
+					{
+						kind: "lunar",
+						date: "2025-09-07",
+						location: berlin,
+					},
 					{ date: "bad-date", location: berlin },
 					"invalid",
 					{ date: "2026-08-12", location: { lat: Number.NaN, lon: 1 } },
@@ -104,7 +147,7 @@ describe("createFavoritesService", () => {
 			}),
 		});
 		const loaded = service.load();
-		expect(loaded).toHaveLength(1);
+		expect(loaded).toHaveLength(2);
 		expect(loaded[0]?.id).toBe(
 			favoriteId("2026-08-12", {
 				lat: 52.52,
@@ -113,6 +156,8 @@ describe("createFavoritesService", () => {
 				label: "",
 			}),
 		);
+		expect(loaded[0]?.kind).toBe("solar");
+		expect(loaded[1]?.kind).toBe("lunar");
 		expect(loaded[0]?.location.label).toBe("");
 		expect(loaded[0]?.savedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 	});
@@ -142,6 +187,7 @@ describe("createFavoritesService", () => {
 		const favorites = [
 			{
 				id: "f1",
+				kind: "solar" as const,
 				date: "2026-08-12",
 				location: berlin,
 				savedAt: "2026-01-01T00:00:00.000Z",
@@ -157,6 +203,7 @@ describe("createFavoritesService", () => {
 		service.save([
 			{
 				id: "custom-id",
+				kind: "lunar",
 				date: "2026-08-12",
 				location: berlin,
 				savedAt: "2025-01-01T00:00:00.000Z",
@@ -164,6 +211,7 @@ describe("createFavoritesService", () => {
 		]);
 		expect(service.load()[0]?.id).toBe("custom-id");
 		expect(service.load()[0]?.savedAt).toBe("2025-01-01T00:00:00.000Z");
+		expect(service.load()[0]?.kind).toBe("lunar");
 	});
 });
 

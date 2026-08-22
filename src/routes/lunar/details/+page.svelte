@@ -4,6 +4,7 @@ import { untrack } from "svelte";
 import { page } from "$app/state";
 import CloudForecastCard from "$lib/components/CloudForecastCard.svelte";
 import CopyLinkButton from "$lib/components/CopyLinkButton.svelte";
+import FavoriteButton from "$lib/components/FavoriteButton.svelte";
 import LunarAltitudeChart from "$lib/components/LunarAltitudeChart.svelte";
 import LunarCompareLocationsCard from "$lib/components/LunarCompareLocationsCard.svelte";
 import LunarCoverageScrubber from "$lib/components/LunarCoverageScrubber.svelte";
@@ -138,6 +139,11 @@ async function load(search: string): Promise<void> {
 		<div class="flex flex-wrap items-center gap-2">
 			{#if query}
 				<CopyLinkButton />
+				<FavoriteButton
+					date={query.date}
+					location={query.location}
+					kind="lunar"
+				/>
 			{/if}
 			<Button color="alternative" size="sm" href="/lunar">
 				{m.backToLunarMap()}

@@ -9,6 +9,8 @@ import {
 	type CloudResult,
 	clouds,
 } from "$lib/services/clouds";
+import { formatTemperature } from "$lib/units";
+import { unitsState } from "$lib/units-state.svelte";
 
 type ContactRow = CloudContactInput & { label: string };
 
@@ -61,6 +63,7 @@ $effect(() => {
 	location?.lat;
 	location?.lon;
 	timesKey;
+	unitsState.temperature;
 	untrack(() => {
 		void load();
 	});
@@ -103,6 +106,14 @@ function formatCloudPct(value: number | null | undefined): string {
 		return m.emDash();
 	}
 	return m.percent({ value: Math.round(value) });
+}
+
+function formatAirTemperature(sample: CloudLayerSample | null): string {
+	const celsius = sample?.temperatureCelsius;
+	if (celsius === null || celsius === undefined) {
+		return m.emDash();
+	}
+	return formatTemperature(celsius, unitsState.temperature);
 }
 
 function cloudBarColor(percent: number): "green" | "yellow" | "red" {
@@ -154,9 +165,12 @@ function layerLine(sample: CloudLayerSample): string {
 					<div class="flex items-baseline justify-between gap-3">
 						<span class="text-gray-600 dark:text-gray-400">{row.label}</span>
 						<span
-							class="shrink-0 font-medium tabular-nums text-gray-900 dark:text-white"
+							class="flex shrink-0 items-baseline gap-2 font-medium tabular-nums text-gray-900 dark:text-white"
 						>
-							{formatCloudPct(row.sample?.total)}
+							<span>{formatCloudPct(row.sample?.total)}</span>
+							<span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+								{formatAirTemperature(row.sample)}
+							</span>
 						</span>
 					</div>
 					{#if !compact && row.sample}

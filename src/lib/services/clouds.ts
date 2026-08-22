@@ -3,7 +3,7 @@ import { type FetchFn, type GetJsonOptions, getJson } from "./http";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 const HOURLY_VARS =
-	"cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high";
+	"cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m";
 
 export const FORECAST_HORIZON_DAYS = 16;
 export const ARCHIVE_START_MS = Date.parse("1940-01-01T00:00:00Z");
@@ -30,6 +30,8 @@ export type CloudLayerSample = {
 	low: number | null;
 	mid: number | null;
 	high: number | null;
+	/** Air temperature at 2 m, degrees Celsius. */
+	temperatureCelsius: number | null;
 };
 
 export type CloudContactSample = {
@@ -68,6 +70,7 @@ type HourlyBlock = {
 	cloud_cover_low?: Array<number | null>;
 	cloud_cover_mid?: Array<number | null>;
 	cloud_cover_high?: Array<number | null>;
+	temperature_2m?: Array<number | null>;
 };
 
 type OpenMeteoCloudResponse = {
@@ -148,6 +151,13 @@ function finitePercent(value: number | null | undefined): number | null {
 	return Math.min(100, Math.max(0, value));
 }
 
+function finiteTemperature(value: number | null | undefined): number | null {
+	if (typeof value !== "number" || !Number.isFinite(value)) {
+		return null;
+	}
+	return value;
+}
+
 export function mapHourlyToContacts(
 	hourly: HourlyBlock,
 	contacts: TimedContact[],
@@ -158,6 +168,7 @@ export function mapHourlyToContacts(
 	const lows = hourly.cloud_cover_low ?? [];
 	const mids = hourly.cloud_cover_mid ?? [];
 	const highs = hourly.cloud_cover_high ?? [];
+	const temps = hourly.temperature_2m ?? [];
 
 	return contacts.map((contact) => {
 		const index = nearestHourIndex(hoursMs, contact.ms);
@@ -176,6 +187,7 @@ export function mapHourlyToContacts(
 				low: finitePercent(lows[index]),
 				mid: finitePercent(mids[index]),
 				high: finitePercent(highs[index]),
+				temperatureCelsius: finiteTemperature(temps[index]),
 			},
 		};
 	});
@@ -243,6 +255,9 @@ export function createCloudService(deps: CloudDeps = {}): CloudService {
 			}
 			if (mode === "too-old") {
 				return { status: "too-old" };
+			}
+			if (mode === "empty") {
+				return { status: "unavailable" };
 			}
 
 			const startDate = utcDateKey(minMs);

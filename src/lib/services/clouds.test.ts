@@ -108,6 +108,7 @@ describe("mapHourlyToContacts", () => {
 				cloud_cover_low: [4, 20],
 				cloud_cover_mid: [3, 12],
 				cloud_cover_high: [2, 8],
+				temperature_2m: [18.4, 22.1],
 			},
 			[
 				{
@@ -127,8 +128,10 @@ describe("mapHourlyToContacts", () => {
 			low: 4,
 			mid: 3,
 			high: 2,
+			temperatureCelsius: 18.4,
 		});
 		expect(samples[1]?.sample?.total).toBe(40);
+		expect(samples[1]?.sample?.temperatureCelsius).toBe(22.1);
 	});
 
 	it("returns null samples when no hour matches or totals are invalid", () => {
@@ -176,6 +179,7 @@ describe("mapHourlyToContacts", () => {
 			low: 0,
 			mid: null,
 			high: 20,
+			temperatureCelsius: null,
 		});
 	});
 

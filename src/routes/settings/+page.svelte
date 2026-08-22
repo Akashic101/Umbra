@@ -5,7 +5,7 @@ import { onMount } from "svelte";
 import { appState } from "$lib/app-state.svelte";
 import GpsErrorAlert from "$lib/components/GpsErrorAlert.svelte";
 import LocaleSwitcher from "$lib/components/LocaleSwitcher.svelte";
-import { serializeDetailsQuery } from "$lib/details-query";
+import { favoriteDetailsHref } from "$lib/services/favorites";
 import { formatIsoDate } from "$lib/eclipse/time";
 import { locationSettingsUrl, openLocationSettings } from "$lib/env/tauri";
 import { m } from "$lib/paraglide/messages.js";
@@ -105,11 +105,12 @@ function chooseTemperature(next: TemperatureUnit): void {
 	unitsState.setTemperature(next);
 }
 
-function detailsHref(
-	date: string,
-	location: (typeof appState.favorites)[number]["location"],
-): string {
-	return `/details?${serializeDetailsQuery({ date, location })}`;
+function favoriteHref(favorite: (typeof appState.favorites)[number]): string {
+	return favoriteDetailsHref(favorite);
+}
+
+function kindLabel(kind: (typeof appState.favorites)[number]["kind"]): string {
+	return kind === "lunar" ? m.navLunar() : m.navSolar();
 }
 
 function placeLabel(
@@ -324,11 +325,11 @@ onMount(() => {
 								class="truncate text-sm text-gray-500 dark:text-gray-400"
 								title={placeLabel(fav.location)}
 							>
-								{placeLabel(fav.location)}
+								{kindLabel(fav.kind)} · {placeLabel(fav.location)}
 							</p>
 						</div>
 						<a
-							href={detailsHref(fav.date, fav.location)}
+							href={favoriteHref(fav)}
 							class="shrink-0 text-sm font-medium text-primary-700 hover:underline dark:text-primary-300"
 						>
 							{m.settingsFavoritesOpen()}

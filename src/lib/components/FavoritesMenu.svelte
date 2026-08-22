@@ -7,22 +7,19 @@ import {
 } from "flowbite-svelte";
 import { CloseOutline, StarOutline } from "flowbite-svelte-icons";
 import { appState } from "$lib/app-state.svelte";
-import { serializeDetailsQuery } from "$lib/details-query";
 import { formatIsoDate } from "$lib/eclipse/time";
 import { m } from "$lib/paraglide/messages.js";
+import { favoriteDetailsHref } from "$lib/services/favorites";
 import { formatCoordinates } from "$lib/services/geocoding";
-
-function detailsHref(
-	date: string,
-	location: (typeof appState.favorites)[number]["location"],
-): string {
-	return `/details?${serializeDetailsQuery({ date, location })}`;
-}
 
 function placeLabel(
 	location: (typeof appState.favorites)[number]["location"],
 ): string {
 	return location.label || formatCoordinates(location.lat, location.lon);
+}
+
+function kindLabel(kind: (typeof appState.favorites)[number]["kind"]): string {
+	return kind === "lunar" ? m.navLunar() : m.navSolar();
 }
 
 function remove(event: MouseEvent, id: string): void {
@@ -70,7 +67,7 @@ function remove(event: MouseEvent, id: string): void {
 		{:else}
 			{#each appState.sortedFavorites as fav (fav.id)}
 				<DropdownItem
-					href={detailsHref(fav.date, fav.location)}
+					href={favoriteDetailsHref(fav)}
 					class="flex items-start gap-2 py-2.5"
 				>
 					<span class="min-w-0 flex-1">
@@ -81,7 +78,7 @@ function remove(event: MouseEvent, id: string): void {
 							class="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400"
 							title={placeLabel(fav.location)}
 						>
-							{placeLabel(fav.location)}
+							{kindLabel(fav.kind)} · {placeLabel(fav.location)}
 						</span>
 					</span>
 					<button

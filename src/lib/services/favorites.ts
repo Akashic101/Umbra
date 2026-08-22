@@ -1,4 +1,9 @@
-import type { FavoriteEclipse, ObserverLocation } from "$lib/types";
+import { serializeDetailsQuery } from "$lib/details-query";
+import type {
+	AppEclipseKind,
+	FavoriteEclipse,
+	ObserverLocation,
+} from "$lib/types";
 
 const STORAGE_KEY = "umbra-favorites-v1";
 
@@ -11,13 +16,26 @@ export type FavoritesDeps = {
 	storage?: Storage | null;
 };
 
-export function favoriteId(date: string, location: ObserverLocation): string {
-	return [
+export function favoriteId(
+	date: string,
+	location: ObserverLocation,
+	kind: AppEclipseKind = "solar",
+): string {
+	const base = [
 		date,
 		location.lat.toFixed(5),
 		location.lon.toFixed(5),
 		String(Math.round(location.height || 0)),
 	].join("|");
+	return kind === "solar" ? base : `${kind}|${base}`;
+}
+
+export function favoriteDetailsHref(favorite: FavoriteEclipse): string {
+	const query = serializeDetailsQuery({
+		date: favorite.date,
+		location: favorite.location,
+	});
+	return favorite.kind === "lunar" ? `/lunar/details?${query}` : `/details?${query}`;
 }
 
 export function createFavoritesService(
@@ -74,11 +92,13 @@ function normalizeFavorites(value: unknown): FavoriteEclipse[] {
 		if (!location || !date) {
 			continue;
 		}
+		const kind = record.kind === "lunar" ? "lunar" : "solar";
 		out.push({
 			id:
 				typeof record.id === "string" && record.id
 					? record.id
-					: favoriteId(date, location),
+					: favoriteId(date, location, kind),
+			kind,
 			date,
 			location,
 			savedAt:

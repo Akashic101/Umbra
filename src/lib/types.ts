@@ -160,6 +160,7 @@ export type PersistedAppState = {
 /** Saved eclipse + observer location for quick details access. */
 export type FavoriteEclipse = {
 	id: string;
+	kind: AppEclipseKind;
 	date: string;
 	location: ObserverLocation;
 	savedAt: string;

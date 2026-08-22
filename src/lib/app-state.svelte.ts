@@ -16,6 +16,7 @@ import {
 	type LocalCircumstances,
 	type LocalSummary,
 	localIsoDate,
+	type AppEclipseKind,
 	type ObserverLocation,
 } from "$lib/types";
 
@@ -356,18 +357,27 @@ export class AppState {
 		});
 	}
 
-	isFavorite(date: string, location: ObserverLocation): boolean {
-		const id = favoriteId(date, location);
+	isFavorite(
+		date: string,
+		location: ObserverLocation,
+		kind: AppEclipseKind = "solar",
+	): boolean {
+		const id = favoriteId(date, location, kind);
 		return this.favorites.some((item) => item.id === id);
 	}
 
-	toggleFavorite(date: string, location: ObserverLocation): void {
-		const id = favoriteId(date, location);
+	toggleFavorite(
+		date: string,
+		location: ObserverLocation,
+		kind: AppEclipseKind = "solar",
+	): void {
+		const id = favoriteId(date, location, kind);
 		if (this.favorites.some((item) => item.id === id)) {
 			this.favorites = this.favorites.filter((item) => item.id !== id);
 		} else {
 			const next: FavoriteEclipse = {
 				id,
+				kind,
 				date,
 				location: {
 					lat: location.lat,

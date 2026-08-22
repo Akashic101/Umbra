@@ -18,6 +18,7 @@ import { lunarState } from "$lib/lunar-state.svelte";
 import { m } from "$lib/paraglide/messages.js";
 import type { LunarContactKey } from "$lib/types";
 import CloudForecastCard from "./CloudForecastCard.svelte";
+import FavoriteButton from "./FavoriteButton.svelte";
 import LunarUmbraDisk from "./LunarUmbraDisk.svelte";
 
 let nowMs = $state(Date.now());
@@ -177,7 +178,19 @@ $effect(() => {
 					})}
 				{/if}
 			</p>
-			{#if detailsHref}
+			{#if detailsHref && lunarState.selectedDate && appState.location}
+				<div class="flex w-full flex-col gap-2">
+					<FavoriteButton
+						date={lunarState.selectedDate}
+						location={appState.location}
+						kind="lunar"
+						class="w-full"
+					/>
+					<Button href={detailsHref} color="primary" class="w-full">
+						{m.moreInfo()}
+					</Button>
+				</div>
+			{:else if detailsHref}
 				<Button href={detailsHref} color="primary" class="w-full">
 					{m.moreInfo()}
 				</Button>
@@ -186,7 +199,19 @@ $effect(() => {
 	{:else if lunarState.circumstances}
 		<div class:opacity-40={showOverlay} aria-busy={showOverlay}>
 			<Alert color="blue">{m.lunarNotVisibleAlert()}</Alert>
-			{#if detailsHref}
+			{#if detailsHref && lunarState.selectedDate && appState.location}
+				<div class="mt-3 flex w-full flex-col gap-2">
+					<FavoriteButton
+						date={lunarState.selectedDate}
+						location={appState.location}
+						kind="lunar"
+						class="w-full"
+					/>
+					<Button href={detailsHref} color="alternative" class="w-full">
+						{m.moreInfo()}
+					</Button>
+				</div>
+			{:else if detailsHref}
 				<div class="mt-3">
 					<Button href={detailsHref} color="alternative" class="w-full">
 						{m.moreInfo()}
