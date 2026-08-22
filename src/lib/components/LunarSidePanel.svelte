@@ -28,6 +28,7 @@ function onTabChange(value: string | undefined): void {
 	<div
 		class="shrink-0 space-y-2 border-b border-gray-200 px-3 pt-3 pb-2 dark:border-gray-700"
 	>
+		<LocationBar />
 		<p
 			class="h-5 truncate text-sm font-medium text-gray-900 dark:text-white"
 			title={locationLabel}
@@ -58,7 +59,6 @@ function onTabChange(value: string | undefined): void {
 				open={lunarState.panelTab === "eclipses"}
 			>
 				<div class="flex flex-col gap-3">
-					<LocationBar />
 					<LunarFilters />
 					<LunarEclipseList />
 				</div>
